@@ -112,13 +112,20 @@ function parseNumber(value) {
 
 function daysBetween(start, end) {
   if (!start || !end) return [];
+  const startParts = String(start).split("-").map(Number);
+  const endParts = String(end).split("-").map(Number);
+  if (startParts.length !== 3 || endParts.length !== 3 || startParts.some(Number.isNaN) || endParts.some(Number.isNaN)) return [];
+
+  const cursor = new Date(Date.UTC(startParts[0], startParts[1] - 1, startParts[2]));
+  const last = new Date(Date.UTC(endParts[0], endParts[1] - 1, endParts[2]));
   const days = [];
-  const cursor = new Date(`${start}T00:00:00`);
-  const last = new Date(`${end}T00:00:00`);
-  if (Number.isNaN(cursor.getTime()) || Number.isNaN(last.getTime())) return [];
+
   while (cursor <= last) {
-    days.push(cursor.toISOString().slice(0, 10));
-    cursor.setDate(cursor.getDate() + 1);
+    const y = cursor.getUTCFullYear();
+    const m = String(cursor.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(cursor.getUTCDate()).padStart(2, "0");
+    days.push(`${y}-${m}-${d}`);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return days;
 }
@@ -490,7 +497,7 @@ function renderDayTimeline(day, dayNo, items, transports) {
         <button class="btn small" data-action="new-itinerary" data-date="${day}">＋ 新增</button>
       </div>
       <div class="timeline-body">
-        ${blocks.filter((x) => typeof x === "string" && x.startsWith("<")).join("")}
+        ${blocks.filter((x) => typeof x === "string" && x.trim().startsWith("<")).join("")}
         ${unusedTransports}
         ${items.length || transports.length ? "" : `<div class="empty"><strong>這一天還沒有安排</strong>新增景點、餐廳、活動或交通。</div>`}
       </div>
@@ -1256,7 +1263,10 @@ function openForm({ title, fields, item, onSubmit }) {
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="${formId}-title" onclick="event.stopPropagation()">
         <div class="modal-head">
           <div><h2 id="${formId}-title">${escapeHtml(title)}</h2><p class="subtitle">欄位可以先填重要的，其他之後再補。</p></div>
-          <button class="btn small" data-action="close-modal">關閉</button>
+          <div class="modal-head-actions">
+            <button type="submit" form="${formId}" class="btn primary small">儲存</button>
+            <button type="button" class="btn small" data-action="close-modal">關閉</button>
+          </div>
         </div>
         <form class="modal-body" id="${formId}">
           <div class="form-grid">
