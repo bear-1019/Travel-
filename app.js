@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.1.6-time-nav-icons";
+const APP_VERSION = "1.2.0-budget-auto";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -432,6 +432,95 @@ function renderTripProgressPanel(trip) {
   `;
 }
 
+function amountText(item, fallbackCurrency) {
+  return currency(item.amount, item.currency || fallbackCurrency || activeTrip()?.currency || "TWD");
+}
+
+function budgetTitle(...parts) {
+  return parts.map((part) => String(part || "").trim()).filter(Boolean).join(" ") || "未命名項目";
+}
+
+function getBudgetSummary(trip) {
+  const defaultCurrency = trip.currency || "TWD";
+  const plannedRows = [];
+  const expenseRows = [];
+  const push = (rows, category, title, amount, currencyCode = defaultCurrency, source = "") => {
+    const n = parseNumber(amount);
+    if (n <= 0) return;
+    rows.push({ category, title: title || category, amount: n, currency: currencyCode || defaultCurrency, source });
+  };
+
+  byTrip("flights").forEach((item) => {
+    push(plannedRows, "航班", budgetTitle(item.airline, item.flightNumber, item.fromAirport && item.toAirport ? `${item.fromAirport} → ${item.toAirport}` : ""), item.price, defaultCurrency, "航班票價");
+  });
+  byTrip("stays").forEach((item) => {
+    push(plannedRows, "住宿", budgetTitle(item.name, item.checkInDate && item.checkOutDate ? `${item.checkInDate} - ${item.checkOutDate}` : ""), item.price, defaultCurrency, "住宿價格");
+  });
+  byTrip("itineraryItems").forEach((item) => {
+    const amount = parseNumber(item.budget) || parseNumber(item.ticketPrice);
+    const source = parseNumber(item.budget) ? "行程預估花費" : "門票價格";
+    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.placeName), amount, defaultCurrency, source);
+  });
+  byTrip("transportSegments").forEach((item) => {
+    push(plannedRows, "交通", budgetTitle(item.method, item.fromName && item.toName ? `${item.fromName} → ${item.toName}` : item.route), item.cost, item.currency || defaultCurrency, "交通費用");
+  });
+  byTrip("documents").forEach((item) => {
+    push(plannedRows, item.type || "文件", budgetTitle(item.name, item.relatedTo), item.amount, item.currency || defaultCurrency, "文件 / 票券金額");
+  });
+  byTrip("expenses").forEach((item) => {
+    push(expenseRows, item.category || "支出", item.title || item.notes || "支出紀錄", item.amount, item.currency || defaultCurrency, item.status || "支出紀錄");
+  });
+
+  const plannedTotal = plannedRows.reduce((sum, item) => sum + parseNumber(item.amount), 0);
+  const expenseTotal = expenseRows.reduce((sum, item) => sum + parseNumber(item.amount), 0);
+  const paidTotal = expenseRows.filter((item) => item.source === "已付款").reduce((sum, item) => sum + parseNumber(item.amount), 0);
+  const total = plannedTotal + expenseTotal;
+  const target = parseNumber(trip.budget);
+  return { plannedRows, expenseRows, plannedTotal, expenseTotal, paidTotal, total, target, remaining: target - total, currency: defaultCurrency };
+}
+
+function renderBudgetSourceRows(rows, fallbackCurrency, emptyText = "尚無自動加總項目") {
+  if (!rows.length) return `<div class="empty"><strong>${escapeHtml(emptyText)}</strong>在航班、住宿、行程、交通、文件或支出裡填金額後，這裡會自動更新。</div>`;
+  return rows.map((item) => `
+    <div class="item-row budget-source-row">
+      <div>
+        <strong>${escapeHtml(item.category)}</strong>
+        <div class="item-meta">${escapeHtml(item.title)}${item.source ? `｜${escapeHtml(item.source)}` : ""}</div>
+      </div>
+      <span>${amountText(item, fallbackCurrency)}</span>
+    </div>
+  `).join("");
+}
+
+function renderBudgetOverviewPanel(trip) {
+  const summary = getBudgetSummary(trip);
+  const usagePct = summary.target > 0 ? Math.min(100, Math.round(summary.total / summary.target * 100)) : 0;
+  const previewRows = [...summary.plannedRows, ...summary.expenseRows].slice(0, 6);
+  return `
+    <section class="section card budget-overview-panel">
+      <div class="section-head">
+        <div>
+          <h2>預算概況</h2>
+          <p class="subtitle compact-subtitle">會自動加總航班票價、住宿價格、行程預估花費、交通費用、文件金額與支出紀錄。</p>
+        </div>
+        <button class="btn small" data-view="budget">查看預算</button>
+      </div>
+      <div class="budget-overview-grid">
+        <div>
+          <div class="stat-label">自動加總</div>
+          <div class="stat-value">${currency(summary.total, summary.currency)}</div>
+          <div class="stat-note">已規劃 ${currency(summary.plannedTotal, summary.currency)}｜支出紀錄 ${currency(summary.expenseTotal, summary.currency)}</div>
+          <div class="progress"><span style="width:${usagePct}%"></span></div>
+          <div class="stat-note">目標 ${currency(summary.target, summary.currency)}｜剩餘 ${currency(summary.remaining, summary.currency)}</div>
+        </div>
+        <div class="list compact-list">
+          ${renderBudgetSourceRows(previewRows, summary.currency, "尚無預算項目")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderDashboard(trip) {
   const tripDays = daysBetween(trip.startDate, trip.endDate);
   const items = byTrip("itineraryItems");
@@ -441,10 +530,9 @@ function renderDashboard(trip) {
   const stays = byTrip("stays");
   const todos = byTrip("todos");
   const packing = byTrip("packingItems");
-  const expenses = byTrip("expenses");
+  const budgetSummary = getBudgetSummary(trip);
   const doneTodos = todos.filter((t) => t.status === "完成").length;
   const packed = packing.filter((p) => ["已準備", "已放入行李"].includes(p.status)).length;
-  const totalExpense = expenses.reduce((sum, item) => sum + parseNumber(item.amount), 0);
   const nextItem = sortByDateTime(items).find((item) => `${item.date || "9999-99-99"} ${item.startTime || "99:99"}` >= `${todayISO()} 00:00`) || sortByDateTime(items)[0];
   const nextStay = byTrip("stays").find((stay) => stay.checkOutDate >= todayISO()) || byTrip("stays")[0];
 
@@ -460,10 +548,12 @@ function renderDashboard(trip) {
       ${statCard("天數", `${tripDays.length || 0}`, "含出發與回程日")}
       ${statCard("規劃完成度", `${overallProgress(trip)}%`, "可在編輯旅程中修改")}
       ${statCard("行程點", `${items.length}`, `${transports.length} 段交通已記錄`)}
-      ${statCard("預算使用", currency(totalExpense, trip.currency || "TWD"), `目標 ${currency(trip.budget, trip.currency || "TWD")}`)}
+      ${statCard("預算使用", currency(budgetSummary.total, trip.currency || "TWD"), `目標 ${currency(trip.budget, trip.currency || "TWD")}`)}
     </section>
 
     ${renderTripProgressPanel(trip)}
+
+    ${renderBudgetOverviewPanel(trip)}
 
     <section class="section grid two">
       <div class="card">
@@ -635,7 +725,18 @@ function renderTimelineItem(item) {
 }
 
 function renderTransportInline(item) {
-  return `<div class="transport-inline">↓ <strong>${escapeHtml(item.method || "交通")}</strong> ${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}｜${escapeHtml(item.duration || "時間未填")}｜${currency(item.cost, item.currency || "TWD")}</div>`;
+  return `
+    <div class="transport-inline">
+      <div class="transport-inline-main">
+        <span class="transport-arrow">↓</span>
+        <span><strong>${escapeHtml(item.method || "交通")}</strong> ${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}｜${escapeHtml(item.duration || "時間未填")}｜${currency(item.cost, item.currency || "TWD")}</span>
+      </div>
+      <div class="transport-inline-actions">
+        <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
+        <button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>
+      </div>
+    </div>
+  `;
 }
 
 function renderLinks(item) {
@@ -852,14 +953,15 @@ function renderDocumentCard(item) {
 
 function renderBudget(trip) {
   const items = byTrip("expenses").sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-  const total = items.reduce((sum, item) => sum + parseNumber(item.amount), 0);
-  const grouped = groupBy(items, "category");
+  const summary = getBudgetSummary(trip);
+  const grouped = groupBy([...summary.plannedRows, ...summary.expenseRows], "category");
   return `
-    ${topbar({ eyebrow: "Budget", title: "預算與支出", subtitle: `目前記錄 ${currency(total, trip.currency || "TWD")}，目標預算 ${currency(trip.budget, trip.currency || "TWD")}。`, actions: `<button class="btn primary" data-action="new-expense">＋ 新增支出</button>` })}
-    <section class="grid three">
-      ${statCard("總支出", currency(total, trip.currency || "TWD"), "所有已記錄費用")}
-      ${statCard("剩餘預算", currency(parseNumber(trip.budget) - total, trip.currency || "TWD"), "依旅程主幣別粗估")}
-      ${statCard("支出筆數", String(items.length), "可用於分帳與結算")}
+    ${topbar({ eyebrow: "Budget", title: "預算與支出", subtitle: `自動加總 ${currency(summary.total, trip.currency || "TWD")}，目標預算 ${currency(trip.budget, trip.currency || "TWD")}。`, actions: `<button class="btn primary" data-action="new-expense">＋ 新增支出</button>` })}
+    <section class="grid four">
+      ${statCard("自動加總", currency(summary.total, trip.currency || "TWD"), "所有模組金額合計")}
+      ${statCard("已規劃", currency(summary.plannedTotal, trip.currency || "TWD"), "航班、住宿、行程、交通、文件")}
+      ${statCard("支出紀錄", currency(summary.expenseTotal, trip.currency || "TWD"), "預算頁手動新增")}
+      ${statCard("剩餘預算", currency(summary.remaining, trip.currency || "TWD"), "目標扣除自動加總")}
     </section>
     <section class="section grid two">
       <div class="card">
@@ -868,13 +970,18 @@ function renderBudget(trip) {
           ${Object.keys(grouped).map((key) => {
             const sum = grouped[key].reduce((acc, item) => acc + parseNumber(item.amount), 0);
             return `<div class="item-row"><strong>${escapeHtml(key || "未分類")}</strong><span>${currency(sum, trip.currency || "TWD")}</span></div>`;
-          }).join("") || `<div class="empty"><strong>尚無支出</strong>新增機票、住宿、交通、餐費或門票。</div>`}
+          }).join("") || `<div class="empty"><strong>尚無金額</strong>在航班、住宿、行程、交通、文件或支出裡填金額。</div>`}
         </div>
       </div>
       <div class="card">
-        <div class="section-head"><h2>支出明細</h2></div>
-        <div class="list">${items.map(renderExpenseCard).join("") || emptyBlock("尚無支出", "新增一筆預算或實際花費。")}</div>
+        <div class="section-head"><h2>自動加總明細</h2></div>
+        <div class="list">${renderBudgetSourceRows([...summary.plannedRows, ...summary.expenseRows], trip.currency || "TWD")}</div>
       </div>
+    </section>
+    <section class="section card">
+      <div class="section-head"><h2>支出明細</h2><button class="btn small" data-action="new-expense">＋ 新增支出</button></div>
+      <div class="list">${items.map(renderExpenseCard).join("") || emptyBlock("尚無支出", "新增一筆預算或實際花費。")}</div>
+      <p class="subtitle compact-subtitle">提醒：如果同一筆費用同時填在行程/住宿/航班與支出明細，會被視為兩筆金額。</p>
     </section>
   `;
 }
