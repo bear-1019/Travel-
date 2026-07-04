@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.1.0-google-sheets";
+const APP_VERSION = "1.1.3-bottom-flights";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -28,9 +28,9 @@ const navItems = [
   { key: "settings", label: "同步設定", mobileLabel: "同步", emoji: "⚙️" }
 ];
 
-// 手機底部只保留旅行中最常用的 5 個入口。
+// 手機底部保留 6 個最常用入口：首頁、行程、航班、住宿、文件、同步。
 // 交通仍會穿插在「行程」時間軸裡，桌面版側欄也仍保留交通總覽。
-const mobileNavItems = ["dashboard", "itinerary", "stays", "documents", "settings"];
+const mobileNavItems = ["dashboard", "itinerary", "flights", "stays", "documents", "settings"];
 
 const collections = [
   "trips", "flights", "stays", "itineraryItems", "transportSegments", "packingItems",

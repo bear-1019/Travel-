@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.1.2-nav-ux";
+const CACHE_NAME = "tripboard-v1.1.3-bottom-flights";
 const ASSETS = [
   "./",
   "./index.html",

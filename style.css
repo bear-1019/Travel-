@@ -513,8 +513,8 @@ h3 { font-size: 1.05rem; }
     right: 12px;
     bottom: calc(10px + var(--safe-bottom));
     z-index: 30;
-    padding: 7px;
-    gap: 4px;
+    padding: 6px;
+    gap: 3px;
     background: rgba(255,255,255,0.82);
     backdrop-filter: blur(18px);
     border: 1px solid var(--line);
@@ -523,19 +523,20 @@ h3 { font-size: 1.05rem; }
     overflow-x: auto;
   }
   .mobile-tabs button {
-    min-width: 66px;
+    min-width: 52px;
     border: 0;
     background: transparent;
     color: var(--muted);
     border-radius: 20px;
-    padding: 9px 8px;
+    padding: 8px 5px;
     display: grid;
     gap: 2px;
     justify-items: center;
-    font-size: 0.73rem;
+    font-size: 0.66rem;
     font-weight: 800;
   }
   .mobile-tabs button.active { background: #111827; color: white; }
+  .mobile-tabs button span:first-child { font-size: 1.02rem; line-height: 1; }
   .day-head { align-items: flex-start; }
   .day-actions { justify-content: flex-end; }
   .timeline-item { grid-template-columns: 58px 1fr; gap: 8px; }
