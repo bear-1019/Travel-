@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.1.6-time-nav-icons";
+const CACHE_NAME = "tripboard-v1.1.7-time-spacing-fix";
 const ASSETS = [
   "./",
   "./index.html",

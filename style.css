@@ -648,3 +648,60 @@ html, body { width: 100%; overflow-x: hidden; }
   .modal-head { padding: 16px 14px 12px; }
   .modal-body { padding: 14px; }
 }
+
+/* Fix: make start/end times readable in the left timeline rail. */
+.timeline-item {
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.timeline-time {
+  padding-top: 12px;
+  min-width: 0;
+}
+.time-range {
+  min-height: 66px;
+  align-content: start;
+  gap: 7px;
+}
+.time-range-line {
+  height: 22px;
+}
+.timeline-content::before {
+  left: -10px;
+  top: 22px;
+}
+.transport-inline {
+  margin-left: 96px;
+}
+
+@media (max-width: 960px) {
+  .timeline-item {
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .timeline-time {
+    padding-top: 10px;
+  }
+  .time-range {
+    min-height: 60px;
+    gap: 7px;
+  }
+  .time-range strong {
+    font-size: 0.76rem;
+    letter-spacing: -0.03em;
+  }
+  .time-range-line {
+    height: 20px;
+  }
+  .timeline-content::before {
+    left: -9px;
+    top: 22px;
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 0 4px rgba(180,83,9,0.12);
+  }
+  .transport-inline {
+    margin-left: 76px;
+  }
+}
