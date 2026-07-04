@@ -602,8 +602,8 @@ function renderTimelineItem(item) {
   const startLabel = escapeHtml(item.startTime || "未定");
   const endLabel = item.endTime ? escapeHtml(item.endTime) : "";
   const timeBlock = endLabel
-    ? `<div class="time-range"><strong>${startLabel}</strong><span class="time-range-line"></span><strong>${endLabel}</strong></div>`
-    : `<div class="time-range"><strong>${startLabel}</strong></div>`;
+    ? `<div class="time-range has-end"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div><span class="time-range-line" aria-hidden="true"></span><div class="time-mark end"><strong>${endLabel}</strong><span class="time-dot end-dot" aria-hidden="true"></span></div></div>`
+    : `<div class="time-range single"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div></div>`;
 
   return `
     <div class="timeline-item">
