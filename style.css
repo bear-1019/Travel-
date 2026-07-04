@@ -814,3 +814,49 @@ html, body { width: 100%; overflow-x: hidden; }
     margin-left: 86px;
   }
 }
+
+
+/* Timeline vertical alignment: pin start time near card top and end time near card bottom. */
+.timeline-item {
+  align-items: stretch;
+}
+.timeline-time {
+  display: flex;
+  align-items: stretch;
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.time-range.has-end {
+  flex: 1;
+  width: 100%;
+  min-height: 100%;
+  grid-template-rows: auto minmax(28px, 1fr) auto;
+  align-items: stretch;
+}
+.time-range.single {
+  align-self: start;
+}
+.time-range-line {
+  height: auto;
+  min-height: 28px;
+  align-self: stretch;
+  margin: 5px 0;
+}
+.time-mark.end strong,
+.time-mark.end .time-dot {
+  align-self: end;
+}
+
+@media (max-width: 960px) {
+  .timeline-time {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .time-range.has-end {
+    grid-template-rows: auto minmax(34px, 1fr) auto;
+  }
+  .time-range-line {
+    min-height: 34px;
+    margin: 5px 0;
+  }
+}

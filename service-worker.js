@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.1.8-timeline-dots";
+const CACHE_NAME = "tripboard-v1.1.9-time-bottom-align";
 const ASSETS = [
   "./",
   "./index.html",
