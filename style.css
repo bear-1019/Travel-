@@ -337,6 +337,24 @@ h3 { font-size: 1.05rem; }
   font-weight: 780;
   padding-top: 14px;
 }
+.time-range {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  line-height: 1.05;
+}
+.time-range strong {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+.time-range-line {
+  width: 1px;
+  height: 12px;
+  background: linear-gradient(180deg, rgba(107,114,128,0.28), rgba(107,114,128,0.08));
+  border-radius: 999px;
+}
 .timeline-content {
   background: rgba(255,255,255,0.76);
   border: 1px solid var(--line);
@@ -540,6 +558,8 @@ h3 { font-size: 1.05rem; }
   .day-head { align-items: flex-start; }
   .day-actions { justify-content: flex-end; }
   .timeline-item { grid-template-columns: 58px 1fr; gap: 8px; }
+  .time-range strong { font-size: 0.78rem; }
+  .time-range-line { height: 10px; }
   .transport-inline { margin-left: 66px; }
   .modal-backdrop { padding: 0; align-items: flex-end; }
   .modal { border-radius: 28px 28px 0 0; max-height: 88vh; }
@@ -591,13 +611,15 @@ html, body { width: 100%; overflow-x: hidden; }
   .day-actions { gap: 6px; }
   .day-actions .btn { padding: 7px 10px; font-size: 0.78rem; }
   .timeline-body { padding: 0 14px 14px; }
-  .timeline-item { grid-template-columns: 52px 1fr; gap: 8px; }
-  .timeline-time { font-size: 0.76rem; }
+  .timeline-item { grid-template-columns: 58px 1fr; gap: 8px; }
+  .timeline-time { font-size: 0.74rem; }
+  .time-range strong { font-size: 0.78rem; }
+  .time-range-line { height: 10px; }
   .timeline-content { border-radius: 16px; padding: 12px; }
   .item-title { font-size: 0.96rem; }
   .item-meta { font-size: 0.8rem; }
   .item-actions .btn { padding: 7px 9px; font-size: 0.76rem; }
-  .transport-inline { margin-left: 60px; font-size: 0.78rem; padding: 9px 11px; border-radius: 14px; }
+  .transport-inline { margin-left: 66px; font-size: 0.78rem; padding: 9px 11px; border-radius: 14px; }
   .seg-control { width: 100%; overflow-x: auto; padding: 5px; -webkit-overflow-scrolling: touch; }
   .seg-control button { flex: 0 0 auto; }
   .progress-grid { grid-template-columns: 1fr; gap: 12px; }

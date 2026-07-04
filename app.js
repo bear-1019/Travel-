@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.1.4-ui-autocomplete-progress";
+const APP_VERSION = "1.1.6-time-nav-icons";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -14,11 +14,11 @@ function googleScriptUrl() {
 }
 
 const navItems = [
-  { key: "dashboard", label: "首頁", emoji: "🏠" },
+  { key: "dashboard", label: "首頁", emoji: "🧭" },
   { key: "itinerary", label: "行程", emoji: "🗓️" },
   { key: "transport", label: "交通", emoji: "🚇" },
   { key: "flights", label: "航班", emoji: "✈️" },
-  { key: "stays", label: "住宿", emoji: "🏨" },
+  { key: "stays", label: "住宿", emoji: "🏠" },
   { key: "packing", label: "行李", emoji: "🧳" },
   { key: "documents", label: "文件", emoji: "🎟️" },
   { key: "budget", label: "預算", emoji: "💳" },
@@ -599,14 +599,20 @@ function renderDayTimeline(day, dayNo, items, transports) {
 }
 
 function renderTimelineItem(item) {
+  const startLabel = escapeHtml(item.startTime || "未定");
+  const endLabel = item.endTime ? escapeHtml(item.endTime) : "";
+  const timeBlock = endLabel
+    ? `<div class="time-range"><strong>${startLabel}</strong><span class="time-range-line"></span><strong>${endLabel}</strong></div>`
+    : `<div class="time-range"><strong>${startLabel}</strong></div>`;
+
   return `
     <div class="timeline-item">
-      <div class="timeline-time">${escapeHtml(item.startTime || "未定")}</div>
+      <div class="timeline-time">${timeBlock}</div>
       <div class="timeline-content">
         <div class="item-row">
           <div>
             <div class="item-title">${escapeHtml(item.title)}</div>
-            <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")} ${item.endTime ? `｜至 ${escapeHtml(item.endTime)}` : ""}</div>
+            <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
           </div>
           <div class="item-actions">
             <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
