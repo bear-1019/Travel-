@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.0.0";
+const CACHE_NAME = "tripboard-v1.1.2-nav-ux";
 const ASSETS = [
   "./",
   "./index.html",
@@ -26,6 +26,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
+  if (new URL(request.url).pathname.endsWith("/google-sync-config.js")) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {

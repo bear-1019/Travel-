@@ -318,6 +318,12 @@ h3 { font-size: 1.05rem; }
 }
 .day-title { font-size: 1.15rem; font-weight: 900; letter-spacing: -0.04em; }
 .day-date { color: var(--muted); margin-top: 3px; font-size: 0.88rem; }
+.day-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 .timeline-body { padding: 0 18px 18px; display: grid; gap: 8px; }
 .timeline-item {
   display: grid;
@@ -530,6 +536,8 @@ h3 { font-size: 1.05rem; }
     font-weight: 800;
   }
   .mobile-tabs button.active { background: #111827; color: white; }
+  .day-head { align-items: flex-start; }
+  .day-actions { justify-content: flex-end; }
   .timeline-item { grid-template-columns: 58px 1fr; gap: 8px; }
   .transport-inline { margin-left: 66px; }
   .modal-backdrop { padding: 0; align-items: flex-end; }

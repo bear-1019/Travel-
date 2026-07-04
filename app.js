@@ -25,10 +25,12 @@ const navItems = [
   { key: "todos", label: "待辦", emoji: "✅" },
   { key: "places", label: "地點庫", emoji: "📍" },
   { key: "emergency", label: "緊急資訊", emoji: "🆘" },
-  { key: "settings", label: "同步設定", emoji: "⚙️" }
+  { key: "settings", label: "同步設定", mobileLabel: "同步", emoji: "⚙️" }
 ];
 
-const mobileNavItems = ["dashboard", "itinerary", "transport", "documents", "settings"];
+// 手機底部只保留旅行中最常用的 5 個入口。
+// 交通仍會穿插在「行程」時間軸裡，桌面版側欄也仍保留交通總覽。
+const mobileNavItems = ["dashboard", "itinerary", "stays", "documents", "settings"];
 
 const collections = [
   "trips", "flights", "stays", "itineraryItems", "transportSegments", "packingItems",
@@ -298,7 +300,7 @@ function renderMobileTabs() {
     <nav class="mobile-tabs">
       ${navItems.filter((item) => mobileNavItems.includes(item.key)).map((item) => `
         <button type="button" data-view="${item.key}" class="${ui.view === item.key ? "active" : ""}">
-          <span>${item.emoji}</span><span>${item.label}</span>
+          <span>${item.emoji}</span><span>${item.mobileLabel || item.label}</span>
         </button>
       `).join("")}
     </nav>
@@ -469,7 +471,7 @@ function renderItinerary(trip) {
     ${topbar({
       eyebrow: "Itinerary",
       title: "每日行程",
-      subtitle: "用時間軸記錄景點、餐廳、營業時間、門票、預約、備註，交通段會穿插顯示在行程之間。",
+      subtitle: "用時間軸記錄景點、餐廳、營業時間、門票、預約與備註；點到點交通會直接穿插在每天行程之間。",
       actions: `<button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
     })}
     <div class="seg-control">${dateButtons}</div>
@@ -494,7 +496,10 @@ function renderDayTimeline(day, dayNo, items, transports) {
     <article class="card day-card">
       <div class="day-head">
         <div><div class="day-title">Day ${dayNo}</div><div class="day-date">${formatDateLong(day)}</div></div>
-        <button class="btn small" data-action="new-itinerary" data-date="${day}">＋ 新增</button>
+        <div class="day-actions">
+          <button class="btn small" data-action="new-transport" data-date="${day}">＋ 交通</button>
+          <button class="btn small primary" data-action="new-itinerary" data-date="${day}">＋ 行程</button>
+        </div>
       </div>
       <div class="timeline-body">
         ${blocks.filter((x) => typeof x === "string" && x.trim().startsWith("<")).join("")}
