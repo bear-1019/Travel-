@@ -934,3 +934,20 @@ html, body { width: 100%; overflow-x: hidden; }
     font-size: 0.72rem;
   }
 }
+
+/* Link badges spacing: keep map/ticket/website links from sticking to the info chips above. */
+.timeline-content > .badges + .badges {
+  margin-top: 9px;
+}
+.timeline-content > .badges + .badges .badge {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.timeline-content > .badges + .badges + .item-meta {
+  margin-top: 4px;
+}
+@media (max-width: 760px) {
+  .timeline-content > .badges + .badges {
+    margin-top: 10px;
+  }
+}
