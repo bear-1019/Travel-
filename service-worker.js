@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.2.2-tag-spacing";
+const CACHE_NAME = "tripboard-v1.3.1-pdf-only";
 const ASSETS = [
   "./",
   "./index.html",

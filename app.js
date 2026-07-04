@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.2.0-budget-auto";
+const APP_VERSION = "1.3.1-pdf-only";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -650,7 +650,7 @@ function renderItinerary(trip) {
       eyebrow: "Itinerary",
       title: "每日行程",
       subtitle: "用時間軸記錄景點、餐廳、營業時間、門票、預約與備註；點到點交通會直接穿插在每天行程之間。",
-      actions: `<button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
+      actions: `<button class="btn" data-action="export-itinerary-pdf">匯出 PDF</button><button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
     })}
     <div class="seg-control">${dateButtons}</div>
     <section class="section timeline">
@@ -746,6 +746,104 @@ function renderLinks(item) {
     item.website ? `<a class="badge" href="${escapeHtml(item.website)}" target="_blank" rel="noreferrer">官網</a>` : ""
   ].filter(Boolean).join("");
   return links ? `<div class="badges">${links}</div>` : "";
+}
+
+function printDetail(label, value) {
+  if (value === undefined || value === null || String(value).trim() === "") return "";
+  return `<div class="print-detail"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`;
+}
+
+function renderPrintItineraryItem(item, currencyCode) {
+  const time = [item.startTime, item.endTime].filter(Boolean).join(" – ") || "時間未定";
+  const details = [
+    item.openingHours ? `營業 ${item.openingHours}` : "",
+    item.lastEntry ? `最後入場 ${item.lastEntry}` : "",
+    item.ticketRequired === "是" ? `門票 ${item.ticketStatus || "待確認"}` : "",
+    parseNumber(item.budget) ? `預算 ${currency(item.budget, currencyCode)}` : "",
+    item.weatherType || ""
+  ].filter(Boolean);
+  return `
+    <article class="print-entry print-itinerary-entry">
+      <div class="print-entry-time">${escapeHtml(time)}</div>
+      <div class="print-entry-body">
+        <h3>${escapeHtml(item.title || "未命名行程")}</h3>
+        <div class="print-place">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+        ${details.length ? `<div class="print-tags">${details.map((text) => `<span>${escapeHtml(text)}</span>`).join("")}</div>` : ""}
+        ${printDetail("地址", item.address)}
+        ${printDetail("預約 / 訂位", item.reservationNumber)}
+        ${item.notes ? `<p class="print-notes">${escapeHtml(item.notes)}</p>` : ""}
+      </div>
+    </article>`;
+}
+
+function renderPrintTransport(item) {
+  const time = item.startTime || "時間未定";
+  return `
+    <article class="print-entry print-transport-entry">
+      <div class="print-entry-time">${escapeHtml(time)}</div>
+      <div class="print-entry-body">
+        <div class="print-transport-title">${escapeHtml(item.method || "交通")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
+        <div class="print-place">${escapeHtml(item.duration || "時間未填")}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
+        ${printDetail("路線", item.route)}
+        ${printDetail("轉乘", item.transferInfo)}
+        ${printDetail("備案", item.backup)}
+        ${item.notes ? `<p class="print-notes">${escapeHtml(item.notes)}</p>` : ""}
+      </div>
+    </article>`;
+}
+
+function renderPrintDay(day, dayNo, items, transports, currencyCode) {
+  const entries = [
+    ...items.map((item) => ({ kind: "item", time: item.startTime || "99:99", item })),
+    ...transports.map((item) => ({ kind: "transport", time: item.startTime || "99:99", item }))
+  ].sort((a, b) => a.time.localeCompare(b.time));
+  return `
+    <section class="print-day">
+      <header class="print-day-head"><strong>Day ${dayNo}</strong><span>${formatDateLong(day)}</span></header>
+      <div class="print-day-body">
+        ${entries.length ? entries.map((entry) => entry.kind === "item" ? renderPrintItineraryItem(entry.item, currencyCode) : renderPrintTransport(entry.item)).join("") : `<div class="print-empty">尚無安排</div>`}
+      </div>
+    </section>`;
+}
+
+async function exportItineraryPdf() {
+  const trip = activeTrip();
+  if (!trip) return;
+  document.querySelector("#itinerary-print-root")?.remove();
+  const days = daysBetween(trip.startDate, trip.endDate);
+  const items = sortByDateTime(byTrip("itineraryItems"));
+  const transports = sortByDateTime(byTrip("transportSegments"));
+  const root = document.createElement("section");
+  root.id = "itinerary-print-root";
+  root.innerHTML = `
+    <header class="print-cover">
+      <div class="print-kicker">TRIPBOARD ITINERARY</div>
+      <h1>${escapeHtml(trip.name || "旅行行程")}</h1>
+      <p>${escapeHtml(trip.destination || "")}</p>
+      <p>${formatDateLong(trip.startDate)} – ${formatDateLong(trip.endDate)}｜${escapeHtml(trip.travelers || "")}</p>
+    </header>
+    ${days.map((day, index) => renderPrintDay(day, index + 1, items.filter((item) => item.date === day), transports.filter((item) => item.date === day), trip.currency || "TWD")).join("")}
+    <footer class="print-footer">由 TripBoard 匯出</footer>`;
+  document.body.appendChild(root);
+  document.body.classList.add("print-itinerary-mode");
+
+  const images = [...root.querySelectorAll("img")];
+  await Promise.all(images.map((img) => img.complete ? Promise.resolve() : new Promise((resolve) => {
+    img.addEventListener("load", resolve, { once: true });
+    img.addEventListener("error", resolve, { once: true });
+    setTimeout(resolve, 3000);
+  })));
+
+  const cleanup = () => {
+    document.body.classList.remove("print-itinerary-mode");
+    root.remove();
+  };
+  window.addEventListener("afterprint", cleanup, { once: true });
+  toast("請在列印畫面選擇「另存為 PDF」；iPhone 可在預覽頁分享或儲存到檔案。", 4200);
+  setTimeout(() => window.print(), 120);
+  setTimeout(() => {
+    if (document.body.contains(root)) cleanup();
+  }, 60000);
 }
 
 function renderTransport(trip) {
@@ -1264,6 +1362,7 @@ async function handleAction(event) {
     "google-cloud-load": () => loadGoogleState(true),
     "google-cloud-metadata": () => refreshGoogleMetadata(true),
     "logout": () => logout(),
+    "export-itinerary-pdf": () => exportItineraryPdf(),
     "export-json": () => exportJson(),
     "import-json": () => importJson(),
     "reset-sample": () => resetSample(),

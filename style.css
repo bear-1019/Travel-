@@ -951,3 +951,68 @@ html, body { width: 100%; overflow-x: hidden; }
     margin-top: 10px;
   }
 }
+
+
+/* ===== TripBoard v1.3.1: PDF export ===== */
+#itinerary-print-root { display: none; }
+
+@media (max-width: 700px) {
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body.print-itinerary-mode { background: #fff !important; color: #111827 !important; }
+  body.print-itinerary-mode > *:not(#itinerary-print-root) { display: none !important; }
+  #itinerary-print-root {
+    display: block !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    color: #111827;
+    background: #fff;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+  .print-cover {
+    padding: 4mm 0 8mm;
+    margin-bottom: 7mm;
+    border-bottom: 2px solid #111827;
+  }
+  .print-kicker { font-size: 8pt; letter-spacing: .14em; font-weight: 800; color: #92400e; }
+  .print-cover h1 { margin: 2mm 0 1mm; font-size: 25pt; line-height: 1.15; }
+  .print-cover p { margin: 1mm 0; color: #4b5563; }
+  .print-day { margin: 0 0 7mm; break-inside: auto; page-break-inside: auto; }
+  .print-day-head {
+    display: flex;
+    align-items: baseline;
+    gap: 4mm;
+    padding: 2.5mm 3mm;
+    border-radius: 3mm;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .print-day-head strong { font-size: 15pt; }
+  .print-day-head span { color: #6b7280; }
+  .print-day-body { padding: 2mm 0 0; }
+  .print-entry {
+    display: grid;
+    grid-template-columns: 26mm minmax(0, 1fr);
+    gap: 3mm;
+    padding: 3mm 0;
+    border-bottom: 1px solid #e5e7eb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-entry-time { color: #4b5563; font-weight: 800; padding-top: .5mm; white-space: nowrap; }
+  .print-entry-body h3 { margin: 0; font-size: 13pt; }
+  .print-place { color: #6b7280; margin: .5mm 0 1.5mm; }
+  .print-tags { display: flex; flex-wrap: wrap; gap: 1.5mm; margin: 1.5mm 0; }
+  .print-tags span { border: 1px solid #d1d5db; border-radius: 10mm; padding: .6mm 2mm; font-size: 8.5pt; }
+  .print-detail { display: grid; grid-template-columns: 24mm 1fr; gap: 2mm; margin-top: 1mm; }
+  .print-detail strong { color: #4b5563; }
+  .print-notes { margin: 2mm 0 0; white-space: pre-wrap; }
+  .print-transport-entry .print-entry-body { border-left: 3px solid #9ca3af; padding-left: 3mm; }
+  .print-transport-title { font-weight: 800; }
+  .print-empty { color: #9ca3af; padding: 4mm 2mm; }
+  .print-footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #d1d5db; color: #9ca3af; font-size: 8pt; text-align: right; }
+}
