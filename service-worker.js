@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v1.1.3-bottom-flights";
+const CACHE_NAME = "tripboard-v1.1.4-ui-autocomplete-progress";
 const ASSETS = [
   "./",
   "./index.html",

@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.1.3-bottom-flights";
+const APP_VERSION = "1.1.4-ui-autocomplete-progress";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -203,6 +203,12 @@ function createSeedState() {
       budget: 80000,
       currency: "TWD",
       travelers: "2 人",
+      progressFlights: 80,
+      progressStays: 45,
+      progressItinerary: 35,
+      progressTransport: 25,
+      progressDocuments: 20,
+      progressPacking: 10,
       note: "這是一筆範例資料。你可以直接編輯、刪除，或建立自己的旅程。"
     }],
     flights: [{
@@ -348,11 +354,91 @@ function topbar({ eyebrow, title, subtitle, actions = "" }) {
   `;
 }
 
+
+function clampPercentage(value, fallback = 0) {
+  const raw = value === undefined || value === null || value === "" ? fallback : value;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return Math.max(0, Math.min(100, Number(fallback) || 0));
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function completionValue(trip, fieldName, fallback = 0) {
+  return clampPercentage(trip?.[fieldName], fallback);
+}
+
+function renderProgressLine(label, value) {
+  const pct = clampPercentage(value);
+  return `
+    <div class="progress-line">
+      <div class="progress-line-head"><span>${escapeHtml(label)}</span><strong>${pct}%</strong></div>
+      <div class="progress"><span style="width:${pct}%"></span></div>
+    </div>
+  `;
+}
+
+function progressFallbacks(trip) {
+  const flights = byTrip("flights");
+  const stays = byTrip("stays");
+  const itinerary = byTrip("itineraryItems");
+  const transports = byTrip("transportSegments");
+  const documents = byTrip("documents");
+  const packing = byTrip("packingItems");
+  const packed = packing.filter((p) => ["已準備", "已放入行李"].includes(p.status)).length;
+  return {
+    progressFlights: flights.length ? 50 : 0,
+    progressStays: stays.length ? 50 : 0,
+    progressItinerary: itinerary.length ? 35 : 0,
+    progressTransport: transports.length ? 35 : 0,
+    progressDocuments: documents.length ? 30 : 0,
+    progressPacking: packing.length ? Math.round(packed / packing.length * 100) : 0
+  };
+}
+
+function tripProgressValues(trip) {
+  const fallback = progressFallbacks(trip);
+  return {
+    flights: completionValue(trip, "progressFlights", fallback.progressFlights),
+    stays: completionValue(trip, "progressStays", fallback.progressStays),
+    itinerary: completionValue(trip, "progressItinerary", fallback.progressItinerary),
+    transport: completionValue(trip, "progressTransport", fallback.progressTransport),
+    documents: completionValue(trip, "progressDocuments", fallback.progressDocuments),
+    packing: completionValue(trip, "progressPacking", fallback.progressPacking)
+  };
+}
+
+function overallProgress(trip) {
+  const values = Object.values(tripProgressValues(trip));
+  if (!values.length) return 0;
+  return Math.round(values.reduce((sum, item) => sum + item, 0) / values.length);
+}
+
+function renderTripProgressPanel(trip) {
+  const values = tripProgressValues(trip);
+  return `
+    <section class="section card progress-panel">
+      <div class="section-head">
+        <div><h2>規劃完成度</h2><p class="subtitle compact-subtitle">這裡是手動設定的進度；點「編輯旅程」就能調整各項百分比。</p></div>
+        <button class="btn small" data-action="edit-trip" data-id="${trip.id}">修改完成度</button>
+      </div>
+      <div class="progress-grid">
+        ${renderProgressLine("航班", values.flights)}
+        ${renderProgressLine("住宿", values.stays)}
+        ${renderProgressLine("行程", values.itinerary)}
+        ${renderProgressLine("交通", values.transport)}
+        ${renderProgressLine("文件", values.documents)}
+        ${renderProgressLine("行李", values.packing)}
+      </div>
+    </section>
+  `;
+}
+
 function renderDashboard(trip) {
   const tripDays = daysBetween(trip.startDate, trip.endDate);
   const items = byTrip("itineraryItems");
   const transports = byTrip("transportSegments");
   const documents = byTrip("documents");
+  const flights = byTrip("flights");
+  const stays = byTrip("stays");
   const todos = byTrip("todos");
   const packing = byTrip("packingItems");
   const expenses = byTrip("expenses");
@@ -372,10 +458,12 @@ function renderDashboard(trip) {
 
     <section class="grid four">
       ${statCard("天數", `${tripDays.length || 0}`, "含出發與回程日")}
+      ${statCard("規劃完成度", `${overallProgress(trip)}%`, "可在編輯旅程中修改")}
       ${statCard("行程點", `${items.length}`, `${transports.length} 段交通已記錄`)}
-      ${statCard("文件票券", `${documents.length}`, "門票、訂單、保險、eSIM")}
       ${statCard("預算使用", currency(totalExpense, trip.currency || "TWD"), `目標 ${currency(trip.budget, trip.currency || "TWD")}`)}
     </section>
+
+    ${renderTripProgressPanel(trip)}
 
     <section class="section grid two">
       <div class="card">
@@ -402,9 +490,9 @@ function renderDashboard(trip) {
         <div class="stat-note">${packed}/${packing.length} 已準備</div>
       </div>
       <div class="card compact">
-        <div class="stat-label">雲端同步</div>
-        <div class="stat-value">${ui.session ? "已登入" : "本機"}</div>
-        <div class="stat-note">${ui.session ? escapeHtml(ui.session.user.email) : "到同步設定連接 Supabase"}</div>
+        <div class="stat-label">共享同步</div>
+        <div class="stat-value">${hasGoogleSyncConfig() ? "已設定" : "本機"}</div>
+        <div class="stat-note">${hasGoogleSyncConfig() ? "使用 Google Sheets 共享碼同步" : "到同步設定連接共享雲端"}</div>
       </div>
     </section>
 
@@ -1097,15 +1185,41 @@ const fieldOptions = {
   emergencyType: ["電話", "地址", "保險", "醫療", "信用卡", "大使館/辦事處", "其他"]
 };
 
+
+
+const AIRPORT_SUGGESTIONS = [
+  "TPE 台北桃園 Taoyuan", "TSA 台北松山 Songshan", "KHH 高雄 Kaohsiung", "RMQ 台中 Taichung",
+  "NRT 東京成田 Narita", "HND 東京羽田 Haneda", "KIX 大阪關西 Kansai", "FUK 福岡 Fukuoka", "CTS 札幌新千歲 New Chitose", "OKA 沖繩那霸 Naha",
+  "ICN 首爾仁川 Incheon", "GMP 首爾金浦 Gimpo", "PUS 釜山金海 Busan",
+  "HKG 香港 Hong Kong", "MFM 澳門 Macau", "SIN 新加坡 Changi", "BKK 曼谷素萬那普 Suvarnabhumi", "DMK 曼谷廊曼 Don Mueang", "KUL 吉隆坡 Kuala Lumpur", "DPS 峇里島 Denpasar",
+  "SGN 胡志明 Tan Son Nhat", "HAN 河內 Noi Bai", "DAD 峴港 Da Nang", "MNL 馬尼拉 Manila", "CEB 宿霧 Cebu",
+  "DXB 杜拜 Dubai", "AUH 阿布達比 Abu Dhabi", "DOH 杜哈 Doha", "IST 伊斯坦堡 Istanbul",
+  "CDG 巴黎戴高樂 Charles de Gaulle", "ORY 巴黎奧利 Orly", "LHR 倫敦希斯洛 Heathrow", "LGW 倫敦蓋威克 Gatwick", "AMS 阿姆斯特丹 Schiphol", "FRA 法蘭克福 Frankfurt", "MUC 慕尼黑 Munich", "ZRH 蘇黎世 Zurich", "VIE 維也納 Vienna", "FCO 羅馬 Fiumicino", "MXP 米蘭 Malpensa", "MAD 馬德里 Madrid", "BCN 巴塞隆納 Barcelona", "LIS 里斯本 Lisbon",
+  "JFK 紐約甘迺迪 JFK", "EWR 紐約紐華克 Newark", "LAX 洛杉磯 Los Angeles", "SFO 舊金山 San Francisco", "SEA 西雅圖 Seattle", "ORD 芝加哥 O'Hare", "DFW 達拉斯 Dallas", "ATL 亞特蘭大 Atlanta", "YVR 溫哥華 Vancouver", "YYZ 多倫多 Toronto"
+];
+
+const AIRLINE_SUGGESTIONS = [
+  "EVA Air 長榮航空", "China Airlines 中華航空", "STARLUX 星宇航空", "Cathay Pacific 國泰航空", "HK Express 香港快運",
+  "Japan Airlines 日本航空 JAL", "ANA 全日空", "Peach 樂桃航空", "Jetstar 捷星航空",
+  "Korean Air 大韓航空", "Asiana 韓亞航空", "Jeju Air 濟州航空", "T'way 德威航空", "Jin Air 真航空",
+  "Singapore Airlines 新加坡航空", "Scoot 酷航", "Thai Airways 泰國航空", "AirAsia 亞洲航空", "Malaysia Airlines 馬來西亞航空",
+  "Vietnam Airlines 越南航空", "VietJet Air 越捷航空",
+  "Emirates 阿聯酋航空", "Qatar Airways 卡達航空", "Etihad Airways 阿提哈德航空", "Turkish Airlines 土耳其航空",
+  "Air France 法國航空", "KLM 荷蘭皇家航空", "Lufthansa 漢莎航空", "Swiss 瑞士航空", "British Airways 英國航空",
+  "United Airlines 聯合航空", "Delta Air Lines 達美航空", "American Airlines 美國航空", "Air Canada 加拿大航空", "Qantas 澳洲航空"
+];
+
 function openTripForm(id) {
   const item = id ? state.trips.find((x) => x.id === id) : null;
   openForm({
     title: item ? "編輯旅程" : "新增旅程",
     fields: [
       text("name", "旅程名稱", true), text("destination", "目的地"), dateField("startDate", "開始日期", true), dateField("endDate", "結束日期", true),
-      selectField("status", "狀態", fieldOptions.statusTrip), numberField("budget", "預算"), selectField("currency", "主幣別", fieldOptions.currency), text("travelers", "旅伴"), textarea("note", "旅程備註", true)
+      selectField("status", "狀態", fieldOptions.statusTrip), numberField("budget", "預算"), selectField("currency", "主幣別", fieldOptions.currency), text("travelers", "旅伴"),
+      rangeField("progressFlights", "航班完成度"), rangeField("progressStays", "住宿完成度"), rangeField("progressItinerary", "行程完成度"), rangeField("progressTransport", "交通完成度"), rangeField("progressDocuments", "文件完成度"), rangeField("progressPacking", "行李完成度"),
+      textarea("note", "旅程備註", true)
     ],
-    item: item || { currency: "TWD", status: "規劃中" },
+    item: item || { currency: "TWD", status: "規劃中", progressFlights: 0, progressStays: 0, progressItinerary: 0, progressTransport: 0, progressDocuments: 0, progressPacking: 0 },
     onSubmit: (data) => {
       if (item) Object.assign(item, data);
       else {
@@ -1154,8 +1268,8 @@ function openFlightForm(id) {
   openForm({
     title: item ? "編輯航班" : "新增航班",
     fields: [
-      selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), text("airline", "航空公司", true), text("flightNumber", "航班編號", true), text("bookingRef", "訂位代號 / PNR"),
-      text("fromAirport", "出發機場", true), text("toAirport", "抵達機場", true), datetimeField("departure", "出發時間"), datetimeField("arrival", "抵達時間"),
+      selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), datalistField("airline", "航空公司", AIRLINE_SUGGESTIONS, false, true), text("flightNumber", "航班編號", false, true), text("bookingRef", "訂位代號 / PNR"),
+      datalistField("fromAirport", "出發機場", AIRPORT_SUGGESTIONS, false, true), datalistField("toAirport", "抵達機場", AIRPORT_SUGGESTIONS, false, true), datetimeField("departure", "出發時間"), datetimeField("arrival", "抵達時間"),
       text("terminal", "航廈"), text("gate", "登機門"), text("seat", "座位"), text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"), textarea("notes", "備註", true)
     ],
     item: item || { type: "去程", cabin: "Economy" },
@@ -1288,6 +1402,12 @@ function openForm({ title, fields, item, onSubmit }) {
 
   modalRoot.querySelectorAll("[data-action='close-modal']").forEach((el) => el.addEventListener("click", closeModal));
   const form = modalRoot.querySelector(`#${formId}`);
+  modalRoot.querySelectorAll("input[type='range']").forEach((input) => {
+    input.addEventListener("input", () => {
+      const output = modalRoot.querySelector(`[data-range-value="${input.name}"]`);
+      if (output) output.textContent = `${input.value}%`;
+    });
+  });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = {};
@@ -1295,7 +1415,7 @@ function openForm({ title, fields, item, onSubmit }) {
       const input = form.elements[field.name];
       if (!input) continue;
       if (field.type === "checkbox") data[field.name] = input.checked;
-      else if (field.type === "number") data[field.name] = parseNumber(input.value);
+      else if (["number", "range"].includes(field.type)) data[field.name] = parseNumber(input.value);
       else data[field.name] = input.value.trim();
     }
     onSubmit(data);
@@ -1316,6 +1436,14 @@ function renderField(field, item) {
   if (field.type === "checkbox") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><label class="checkbox-row"><input type="checkbox" name="${field.name}" ${value ? "checked" : ""} /> 是</label></div>`;
   }
+  if (field.type === "datalist") {
+    const listId = `list-${field.name}`;
+    return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><input type="text" name="${field.name}" list="${listId}" value="${escapeHtml(value)}" ${required} placeholder="輸入幾個字即可選擇" /><datalist id="${listId}">${(field.options || []).map((option) => `<option value="${escapeHtml(option)}"></option>`).join("")}</datalist></div>`;
+  }
+  if (field.type === "range") {
+    const rangeValue = clampPercentage(value, 0);
+    return `<div class="field range-field ${full}"><label>${escapeHtml(field.label)} <strong data-range-value="${field.name}">${rangeValue}%</strong></label><input type="range" name="${field.name}" min="${field.min ?? 0}" max="${field.max ?? 100}" step="${field.step ?? 5}" value="${rangeValue}" ${required} /></div>`;
+  }
   return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><input type="${field.type}" name="${field.name}" value="${escapeHtml(value)}" ${required} /></div>`;
 }
 
@@ -1327,6 +1455,8 @@ function datetimeField(name, label, required = false) { return { name, label, ty
 function numberField(name, label, required = false) { return { name, label, type: "number", required }; }
 function urlField(name, label, required = false) { return { name, label, type: "url", required, full: true }; }
 function selectField(name, label, options, required = false) { return { name, label, type: "select", options, required }; }
+function datalistField(name, label, options, full = false, required = false) { return { name, label, type: "datalist", options, full, required }; }
+function rangeField(name, label, required = false) { return { name, label, type: "range", min: 0, max: 100, step: 5, required }; }
 function checkboxField(name, label) { return { name, label, type: "checkbox" }; }
 
 function closeModal() {

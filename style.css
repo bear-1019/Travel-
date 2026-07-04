@@ -545,3 +545,84 @@ h3 { font-size: 1.05rem; }
   .modal { border-radius: 28px 28px 0 0; max-height: 88vh; }
   .kv { grid-template-columns: 96px 1fr; }
 }
+
+
+/* UI refinement: cleaner mobile layout, compact six-tab bottom bar, and editable progress panel. */
+html, body { width: 100%; overflow-x: hidden; }
+.app-shell, .main { width: 100%; max-width: 100%; overflow-x: hidden; }
+.main { max-width: 1240px; }
+.compact-subtitle { margin-top: 4px; max-width: 560px; font-size: 0.9rem; }
+.progress-panel { box-shadow: 0 14px 42px rgba(17,24,39,0.08); }
+.progress-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.progress-line { display: grid; gap: 7px; }
+.progress-line-head { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-weight: 800; font-size: 0.88rem; }
+.progress-line-head strong { color: var(--text); }
+.range-field label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.range-field label strong { color: var(--text); font-size: 0.86rem; }
+.range-field input[type="range"] { padding: 0; background: transparent; box-shadow: none; border: 0; accent-color: var(--accent); }
+
+@media (max-width: 960px) {
+  body {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(245,158,11,0.12), transparent 22rem),
+      linear-gradient(180deg, #fbf7ef 0%, #f8fafc 52%, #f3f4f6 100%);
+  }
+  .sidebar {
+    background: rgba(255,255,255,0.44);
+    backdrop-filter: blur(14px);
+    gap: 10px;
+  }
+  .brand { gap: 10px; }
+  .logo { width: 40px; height: 40px; border-radius: 15px; }
+  .brand-title { font-size: 1.04rem; }
+  .brand-subtitle { font-size: 0.76rem; }
+  .trip-switcher { box-shadow: 0 8px 22px rgba(17,24,39,0.06); }
+  .main { padding: 16px 12px calc(92px + var(--safe-bottom)); }
+  .topbar { gap: 12px; margin-bottom: 16px; }
+  h1 { font-size: clamp(2rem, 10vw, 2.8rem); line-height: 1.02; }
+  h2 { font-size: 1.2rem; }
+  .subtitle { font-size: 0.92rem; line-height: 1.5; }
+  .section { margin-top: 16px; }
+  .card { border-radius: 22px; padding: 16px; box-shadow: 0 12px 32px rgba(17,24,39,0.08); }
+  .card.compact { min-height: 94px; }
+  .day-card { border-radius: 22px; }
+  .day-head { padding: 14px 14px 10px; align-items: flex-start; }
+  .day-title { font-size: 1rem; }
+  .day-actions { gap: 6px; }
+  .day-actions .btn { padding: 7px 10px; font-size: 0.78rem; }
+  .timeline-body { padding: 0 14px 14px; }
+  .timeline-item { grid-template-columns: 52px 1fr; gap: 8px; }
+  .timeline-time { font-size: 0.76rem; }
+  .timeline-content { border-radius: 16px; padding: 12px; }
+  .item-title { font-size: 0.96rem; }
+  .item-meta { font-size: 0.8rem; }
+  .item-actions .btn { padding: 7px 9px; font-size: 0.76rem; }
+  .transport-inline { margin-left: 60px; font-size: 0.78rem; padding: 9px 11px; border-radius: 14px; }
+  .seg-control { width: 100%; overflow-x: auto; padding: 5px; -webkit-overflow-scrolling: touch; }
+  .seg-control button { flex: 0 0 auto; }
+  .progress-grid { grid-template-columns: 1fr; gap: 12px; }
+  .mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    left: 10px;
+    right: 10px;
+    bottom: calc(8px + var(--safe-bottom));
+    gap: 2px;
+    padding: 5px;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 12px 34px rgba(17,24,39,0.16);
+  }
+  .mobile-tabs button {
+    min-width: 0;
+    width: 100%;
+    border-radius: 17px;
+    padding: 7px 2px;
+    font-size: 0.58rem;
+    letter-spacing: -0.02em;
+  }
+  .mobile-tabs button span:first-child { font-size: 0.95rem; }
+  .modal { max-height: 91vh; border-radius: 24px 24px 0 0; }
+  .modal-head { padding: 16px 14px 12px; }
+  .modal-body { padding: 14px; }
+}
