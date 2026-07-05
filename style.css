@@ -3203,3 +3203,28 @@ body[data-theme="coffee"] {
 }
 .field.is-disabled { opacity: .58; }
 .field.is-disabled input { cursor: not-allowed; }
+
+
+/* TripBoard 2.10.0 — dashboard summary & transport icon refresh */
+.home-overview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-overview-grid .stat {
+  min-height: 122px;
+}
+
+.budget-wallet-icon {
+  font-size: 0;
+}
+
+.budget-overview-svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 640px) {
+  .home-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}

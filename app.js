@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.9.0-form-options";
+const APP_VERSION = "2.10.0-home-transport-refresh";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -32,11 +32,51 @@ function googleScriptUrl() {
   return window.TRIPBOARD_GOOGLE_SCRIPT_URL || "";
 }
 
+function normalizeTransportMethod(method = "") {
+  const raw = String(method || "").trim();
+  if (raw === "巴士") return "公車";
+  return raw;
+}
+
+function transportMethodLabel(method = "") {
+  return normalizeTransportMethod(method) || "交通";
+}
+
+function transportMethodIconName(method = "") {
+  switch (normalizeTransportMethod(method)) {
+    case "步行":
+      return "walk";
+    case "地鐵":
+      return "subway";
+    case "公車":
+      return "bus";
+    case "火車":
+    case "高鐵":
+      return "train";
+    case "Uber":
+    case "計程車":
+    case "自駕":
+      return "car";
+    case "飛機":
+      return "plane";
+    case "船":
+      return "ferry";
+    default:
+      return "route";
+  }
+}
+
 function iconSvg(name, className = "app-icon") {
   const icons = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
     route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
+    bus: '<rect x="4" y="5" width="16" height="12" rx="3"/><path d="M7 17v2M17 17v2M7 9h10M8.5 13h.01M15.5 13h.01"/><path d="M6 9V7h12v2"/>',
+    subway: '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M8 7h8M8 11h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M8 18l-2 3M16 18l2 3M10 21h4"/>',
+    train: '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M8 7h8M8 11h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M8 18l-2 3M16 18l2 3M10 21h4"/>',
+    car: '<path d="M5 15h14"/><path d="M7 15l1.4-4.2A2 2 0 0 1 10.3 9h3.4a2 2 0 0 1 1.9 1.3L17 15"/><rect x="4" y="11" width="16" height="5" rx="2"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/>',
+    ferry: '<path d="M4 15.5 12 5l8 10.5"/><path d="M6.5 12h11"/><path d="M3 18c1.6 1.3 3.1 2 4.5 2s2.9-.7 4.5-2c1.6 1.3 3.1 2 4.5 2s2.9-.7 4.5-2"/>',
+    walk: '<path d="M9 5.5a1.8 1.8 0 1 0 0-.01"/><path d="M10 8.5 8.4 12l-2.2 1.4"/><path d="M10.7 9.2 13 11l2.5.2"/><path d="M9.3 12.2 11 15l-.7 5"/><path d="M12.2 11.2 13 14l2.8 2.2"/>',
     plane: '<path d="M12 2.5c.82 0 1.4.78 1.4 1.72v5.05l7.1 4.12v2.02l-7.1-2.08v5.08l2.42 1.82v1.42L12 20.55l-3.82 1.1v-1.42l2.42-1.82v-5.08l-7.1 2.08v-2.02l7.1-4.12V4.22c0-.94.58-1.72 1.4-1.72Z" fill="currentColor" stroke="none"/>',
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
     luggage: '<path d="M7 7h10a2 2 0 0 1 2 2v10H5V9a2 2 0 0 1 2-2Z"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M9 11v5M15 11v5M7 19v2M17 19v2"/>',
@@ -68,7 +108,7 @@ function itineraryTypeIcon(type = "") {
   const mapping = {
     "景點": "museum", "展覽": "museum", "餐廳": "food", "咖啡廳": "cafe",
     "購物": "shopping", "活動": "activity", "機場": "airport", "車站": "station",
-    "夜景": "moon", "休息": "rest", "住宿": "bed", "交通": "route", "備案": "pin"
+    "夜景": "moon", "休息": "rest", "住宿": "bed", "交通": "route", "點心": "cafe", "備案": "pin"
   };
   return iconSvg(mapping[type] || "pin", "itinerary-type-icon-svg");
 }
@@ -823,11 +863,11 @@ function progressRingSvg(percent) {
 function renderDashboard(trip) {
   const tripDays = daysBetween(trip.startDate, trip.endDate);
   const items = sortByDateTime(byTrip("itineraryItems"));
+  const transports = sortByDateTime(byTrip("transportSegments"));
   const flights = byTrip("flights");
   const stays = byTrip("stays");
   const documents = byTrip("documents");
   const budgetSummary = getBudgetSummary(trip);
-  const nextItem = items.find((item) => `${item.date || "9999-99-99"} ${item.startTime || "99:99"}` >= `${todayISO()} 00:00`) || items[0];
   const usagePct = budgetSummary.target > 0 ? Math.min(100, Math.round(budgetSummary.total / budgetSummary.target * 100)) : 0;
   const itineraryPct = completionValue(trip, "progressItinerary", items.length ? Math.min(100, items.length * 10) : 0);
   const stayPct = completionValue(trip, "progressStays", stays.length ? 70 : 0);
@@ -849,7 +889,7 @@ function renderDashboard(trip) {
             ${state.trips.map((item) => `<option value="${item.id}" ${item.id === state.activeTripId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
           </select>
           <div class="home-trip-date">${formatDateYmd(trip.startDate)} – ${formatDateYmd(trip.endDate)}</div>
-          <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}・${escapeHtml(trip.travelers || "旅伴未填")}</div>
+          <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}</div>
         </div>
         <div class="home-trip-side">
           <span class="trip-status-pill">${escapeHtml(trip.status || "規劃中")}</span>
@@ -861,18 +901,12 @@ function renderDashboard(trip) {
       </section>
 
       <section class="home-section">
-        <div class="home-section-label">下一個重點</div>
-        <div class="card next-focus-card">
-          ${nextItem ? `
-            <div class="next-focus-date">${formatDateLong(nextItem.date)}</div>
-            <div class="next-focus-layout">
-              <div class="next-focus-time">${escapeHtml(nextItem.startTime || "時間未定")}</div>
-              <div class="next-focus-copy">
-                <h2>${escapeHtml(nextItem.title)}</h2>
-                <p>${escapeHtml(nextItem.address || "地址未填")}</p>
-              </div>
-              <button class="round-arrow" data-view="itinerary" aria-label="查看行程">›</button>
-            </div>` : emptyBlock("還沒有行程", "新增第一個景點、餐廳或活動。")}
+        <div class="home-section-label">旅程總覽</div>
+        <div class="grid two home-overview-grid">
+          ${statCard("已排入行程", `${items.length} 筆`, items.length ? "含景點、餐廳、住宿等安排" : "尚未新增任何行程")}
+          ${statCard("交通段", `${transports.length} 段`, transports.length ? "包含自駕、公車、飛機與其他點對點交通" : "尚未新增交通段")}
+          ${statCard("航班", `${flights.length} 班`, flights.length ? "可自動同步到每日行程" : "尚未新增航班")}
+          ${statCard("住宿", `${stays.length} 筆`, stays.length ? "快速掌握住宿安排數量" : "尚未新增住宿")}
         </div>
       </section>
 
@@ -891,7 +925,7 @@ function renderDashboard(trip) {
       <section class="home-section">
         <div class="home-section-label">預算概況</div>
         <div class="card simple-budget-card">
-          <div class="budget-wallet-icon">▣</div>
+          <div class="budget-wallet-icon">${iconSvg("wallet", "budget-overview-svg")}</div>
           <div class="simple-budget-copy">
             <span>已規劃與支出</span>
             <strong>${currency(budgetSummary.total, budgetSummary.currency)}</strong>
@@ -1106,6 +1140,8 @@ function renderTransportInline(item) {
   const startLabel = escapeHtml(item.startTime || "");
   const endLabel = escapeHtml(inferTransportEndTime(item));
   const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
+  const methodLabel = transportMethodLabel(item.method);
+  const methodIcon = transportMethodIconName(item.method);
   const arrivalSuffix = flightLinked && item.arrivalDate && item.arrivalDate !== item.date
     ? `・抵達 ${escapeHtml(formatDateYmd(item.arrivalDate))} ${escapeHtml(item.endTime || "")}`
     : "";
@@ -1125,8 +1161,8 @@ function renderTransportInline(item) {
       </div>
       <div class="transport-inline slim-transport-row">
         <div class="transport-inline-main">
-          <span class="transport-icon">${iconSvg(item.method === "步行" ? "route" : item.method === "飛機" ? "plane" : item.method === "火車" || item.method === "地鐵" || item.method === "高鐵" ? "station" : "route", "transport-method-svg")}</span>
-          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+          <span class="transport-icon">${iconSvg(methodIcon, "transport-method-svg")}</span>
+          <span><strong>${escapeHtml(methodLabel)}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
         </div>
         <div class="transport-inline-actions">${inlineActions}</div>
       </div>
@@ -1178,7 +1214,7 @@ function renderPrintTransport(item) {
     <article class="print-entry print-transport-entry">
       <div class="print-entry-time">${escapeHtml(time)}</div>
       <div class="print-entry-body">
-        <div class="print-transport-title">${escapeHtml(item.method || "交通")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
+        <div class="print-transport-title">${escapeHtml(methodLabel)}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
         <div class="print-place">${escapeHtml(timing)}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
         ${printDetail("路線", item.route)}
         ${printDetail("轉乘", item.transferInfo)}
@@ -1254,6 +1290,7 @@ function renderTransport(trip) {
 
 function renderTransportCard(item) {
   const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
+  const methodLabel = transportMethodLabel(item.method);
   const timingLabel = transportDurationLabel(item) || (item.endTime ? `${item.startTime || ""}–${item.endTime}` : "時間未填");
   const actions = flightLinked
     ? `<div class="item-actions"><button class="btn small" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button></div>`
@@ -1263,12 +1300,12 @@ function renderTransportCard(item) {
       <div class="item-row">
         <div>
           <div class="item-title">${formatDate(item.date)} ${escapeHtml(item.startTime || "時間未定")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
-          <div class="item-meta">${escapeHtml(item.route || item.method || "交通方式未填")}</div>
+          <div class="item-meta">${escapeHtml(item.route || methodLabel || "交通方式未填")}</div>
         </div>
         ${actions}
       </div>
       <div class="badges">
-        <span class="badge dark">${escapeHtml(item.method || "交通")}</span>
+        <span class="badge dark">${escapeHtml(methodLabel)}</span>
         <span class="badge blue">${escapeHtml(timingLabel)}</span>
         ${flightLinked ? `<span class="badge">航班自動同步</span>` : ""}
         <span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>
@@ -1860,11 +1897,11 @@ const fieldOptions = {
   currency: ["TWD", "EUR", "JPY", "USD", "GBP", "KRW"],
   yesNo: ["是", "否"],
   ticketStatus: ["不需", "待購買", "已購買", "需現場買", "已預約"],
-  itineraryType: ["景點", "餐廳", "咖啡廳", "購物", "交通", "住宿", "活動", "展覽", "夜景", "機場", "車站", "休息", "備案"],
+  itineraryType: ["景點", "餐廳", "咖啡廳", "點心", "購物", "交通", "住宿", "活動", "展覽", "夜景", "機場", "車站", "休息", "備案"],
   itemStatus: ["想去", "已排入", "已預約", "已完成", "取消"],
   priority: ["必去", "可去", "備案"],
   weather: ["室內", "室外", "雨天備案", "天氣好再去"],
-  transport: ["步行", "地鐵", "巴士", "火車", "高鐵", "Uber", "計程車", "自駕", "飛機", "船", "其他"],
+  transport: ["步行", "地鐵", "公車", "火車", "高鐵", "Uber", "計程車", "自駕", "飛機", "船", "其他"],
   luggageFriendly: ["高", "中", "低", "未知"],
   bookingStatus: ["不需預約", "待購票", "已購票", "需訂位", "已訂位"],
   stayType: ["飯店", "Airbnb", "公寓", "青旅", "民宿", "朋友家", "其他"],
@@ -1936,7 +1973,7 @@ function openTripForm(id) {
     title: item ? "編輯旅程" : "新增旅程",
     fields: [
       text("name", "旅程名稱", true), text("destination", "目的地"), dateField("startDate", "開始日期", true), dateField("endDate", "結束日期", true),
-      selectField("status", "狀態", fieldOptions.statusTrip), checkboxField("budgetUnlimited", "無預算限制", true), numberField("budget", "預算上限"), selectField("currency", "主幣別", fieldOptions.currency), text("travelers", "旅伴"),
+      selectField("status", "狀態", fieldOptions.statusTrip), checkboxField("budgetUnlimited", "無預算限制", true), numberField("budget", "預算上限"), selectField("currency", "主幣別", fieldOptions.currency),
       rangeField("progressFlights", "航班完成度"), rangeField("progressStays", "住宿完成度"), rangeField("progressItinerary", "行程完成度"), rangeField("progressTransport", "交通完成度"), rangeField("progressDocuments", "文件完成度"), rangeField("progressPacking", "行李完成度"),
       textarea("note", "旅程備註", true)
     ],
@@ -1970,7 +2007,8 @@ function openItineraryForm(id, defaultDate) {
 }
 
 function openTransportForm(id, defaultDate) {
-  const item = id ? state.transportSegments.find((x) => x.id === id) : null;
+  const existing = id ? state.transportSegments.find((x) => x.id === id) : null;
+  const item = existing ? { ...existing, method: transportMethodLabel(existing.method) } : null;
   openForm({
     title: item ? "編輯交通" : "新增交通",
     fields: [
@@ -1981,8 +2019,9 @@ function openTransportForm(id, defaultDate) {
     ],
     item: item || { date: defaultDate || activeTrip().startDate || todayISO(), method: "地鐵", durationHours: 0, durationMinutes: 1, durationTotalMinutes: 1, duration: "1 分鐘", currency: activeTrip().currency || "TWD", luggageFriendly: "中", bookingStatus: "不需預約" },
     onSubmit: (data) => {
+      data.method = transportMethodLabel(data.method);
       data.endTime = addMinutesToTime(data.startTime, data.durationTotalMinutes);
-      upsert("transportSegments", item, data, "transport");
+      upsert("transportSegments", existing, data, "transport");
     }
   });
 }
