@@ -3228,3 +3228,32 @@ body[data-theme="coffee"] {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* TripBoard 2.10.1 — cleaner home and consistent page-title alignment */
+@media screen and (max-width: 960px) {
+  .view-flights .topbar,
+  .view-stays .topbar,
+  .view-more .topbar,
+  .more-view .topbar {
+    width: 100%;
+    align-items: flex-start !important;
+    text-align: left;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .view-flights .topbar > div:first-child,
+  .view-stays .topbar > div:first-child,
+  .view-more .topbar > div:first-child,
+  .more-view .topbar > div:first-child {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  /* 「航」字左側留白較大，做極小幅光學校正，讓視覺起點與住宿／更多一致。 */
+  .view-flights .topbar h1 {
+    margin-left: -0.06em;
+  }
+}

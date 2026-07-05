@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.10.0-home-transport-refresh";
+const APP_VERSION = "2.10.1-home-clean-header-align";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -863,7 +863,6 @@ function progressRingSvg(percent) {
 function renderDashboard(trip) {
   const tripDays = daysBetween(trip.startDate, trip.endDate);
   const items = sortByDateTime(byTrip("itineraryItems"));
-  const transports = sortByDateTime(byTrip("transportSegments"));
   const flights = byTrip("flights");
   const stays = byTrip("stays");
   const documents = byTrip("documents");
@@ -897,16 +896,6 @@ function renderDashboard(trip) {
             <button class="home-mini-action" data-action="edit-trip" data-id="${trip.id}">編輯旅程</button>
             <button class="home-mini-action primary" data-action="new-trip">＋ 新旅程</button>
           </div>
-        </div>
-      </section>
-
-      <section class="home-section">
-        <div class="home-section-label">旅程總覽</div>
-        <div class="grid two home-overview-grid">
-          ${statCard("已排入行程", `${items.length} 筆`, items.length ? "含景點、餐廳、住宿等安排" : "尚未新增任何行程")}
-          ${statCard("交通段", `${transports.length} 段`, transports.length ? "包含自駕、公車、飛機與其他點對點交通" : "尚未新增交通段")}
-          ${statCard("航班", `${flights.length} 班`, flights.length ? "可自動同步到每日行程" : "尚未新增航班")}
-          ${statCard("住宿", `${stays.length} 筆`, stays.length ? "快速掌握住宿安排數量" : "尚未新增住宿")}
         </div>
       </section>
 
