@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.6.0-themes";
+const APP_VERSION = "2.7.0-compact-themes";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -9,7 +9,11 @@ const THEMES = [
   { key: "oat", label: "奶茶藍", description: "溫暖奶茶底・深藍字體", preview: ["#f5f0e7", "#fffdf8", "#152746"], dark: false, themeColor: "#f5f0e7" },
   { key: "midnight", label: "夜幕藍", description: "深藍夜色・柔霧灰白", preview: ["#121826", "#1f2937", "#e5edf9"], dark: true, themeColor: "#121826" },
   { key: "mist", label: "晨霧灰", description: "霧灰白底・乾淨俐落", preview: ["#edf1f4", "#ffffff", "#304254"], dark: false, themeColor: "#edf1f4" },
-  { key: "sage", label: "鼠尾草綠", description: "淡綠米色・墨綠文字", preview: ["#eef3ed", "#fbfdf9", "#234137"], dark: false, themeColor: "#eef3ed" }
+  { key: "sage", label: "鼠尾草綠", description: "淡綠米色・墨綠文字", preview: ["#eef3ed", "#fbfdf9", "#234137"], dark: false, themeColor: "#eef3ed" },
+  { key: "rose", label: "乾燥玫瑰", description: "霧粉裸色・酒紅文字", preview: ["#f7efef", "#fffafa", "#6f3745"], dark: false, themeColor: "#f7efef" },
+  { key: "lavender", label: "薰衣草紫", description: "淡紫灰底・深紫字體", preview: ["#f1eff7", "#fbfaff", "#493d68"], dark: false, themeColor: "#f1eff7" },
+  { key: "forest", label: "深林綠", description: "深墨綠底・柔白文字", preview: ["#12231e", "#1b3029", "#eaf5ef"], dark: true, themeColor: "#12231e" },
+  { key: "charcoal", label: "石墨黑", description: "深灰黑底・冷白文字", preview: ["#181a1f", "#24272e", "#f0f2f6"], dark: true, themeColor: "#181a1f" }
 ];
 const THEME_MAP = Object.fromEntries(THEMES.map((theme) => [theme.key, theme]));
 
@@ -44,7 +48,7 @@ function iconSvg(name, className = "app-icon") {
     cafe: '<path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M7 3v2M11 3v2"/>',
     shopping: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     activity: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    airport: '<path d="m2 16 20-8-8 20-2-8-8-2Z"/><path d="m12 20 3-3M4 18l6-6"/>',
+    airport: '<path d="M4 14.5 20 7.5l-5.3 9.2-3-3-3.4 4.1-1.4-.8 2.3-5.1-5.2 1.6Z"/><path d="m10.2 12.5 3.7-1.6"/>',
     station: '<rect x="5" y="3" width="14" height="16" rx="3"/><path d="M8 7h8M8 14h8M8 19l-2 2M16 19l2 2"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
     moon: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
     rest: '<path d="M4 19h16M6 16h12M8 16V8h8v8M10 8V5h4v3"/>',
@@ -401,8 +405,8 @@ function renderSidebar(trip) {
   const syncText = googleConfigured ? "Google Sheets 同步" : ui.session ? "雲端已登入" : hasSupabaseConfig() ? "可登入同步" : "本機模式";
   return `
     <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">TB</div>
+      <div class="brand brand-wordmark">
+        <span class="brand-mark" aria-hidden="true">${iconSvg("route", "brand-mark-svg")}</span>
         <div>
           <div class="brand-title">TripBoard</div>
           <div class="brand-subtitle">旅行總管 PWA</div>
@@ -1453,31 +1457,32 @@ function renderEmergencyCard(item) {
 }
 
 function renderThemeSelector() {
+  const selected = currentTheme();
   return `
-    <section class="more-group">
-      <div class="home-section-label">佈景主題</div>
-      <div class="card theme-panel">
-        <div class="theme-grid">
+    <section class="more-group theme-section">
+      <div class="theme-section-head">
+        <div class="home-section-label">佈景主題</div>
+        <span class="theme-current-name">目前：${selected.label}</span>
+      </div>
+      <div class="card theme-compact-panel">
+        <div class="theme-chip-strip" role="list" aria-label="選擇佈景主題">
           ${THEMES.map((theme) => `
             <button
               type="button"
-              class="theme-option ${ui.theme === theme.key ? "active" : ""} ${theme.dark ? "dark" : ""}"
+              class="theme-chip ${ui.theme === theme.key ? "active" : ""}"
               data-action="set-theme"
               data-theme="${theme.key}"
               aria-pressed="${ui.theme === theme.key ? "true" : "false"}"
+              title="${theme.description}"
             >
-              <span class="theme-swatch-row">
-                ${theme.preview.map((color) => `<span class="theme-swatch" style="background:${color}"></span>`).join("")}
+              <span class="theme-mini-swatches" aria-hidden="true">
+                ${theme.preview.map((color) => `<i style="background:${color}"></i>`).join("")}
               </span>
-              <span class="theme-option-copy">
-                <strong>${theme.label}</strong>
-                <small>${theme.description}</small>
-              </span>
-              <span class="theme-check">${ui.theme === theme.key ? "使用中" : ""}</span>
+              <span>${theme.label}</span>
+              ${ui.theme === theme.key ? `<b>✓</b>` : ""}
             </button>
           `).join("")}
         </div>
-        <p class="theme-panel-note">切換後會連同新增／編輯行程、交通等視窗一起套用，不會再跳成白色背景。</p>
       </div>
     </section>`;
 }

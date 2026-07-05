@@ -2648,3 +2648,243 @@ body[data-theme="sage"] {
   .theme-grid { grid-template-columns: 1fr; }
   .theme-option { padding: 11px; }
 }
+
+/* =========================================================
+   TripBoard 2.7 — compact theme strip, additional palettes,
+   clean wordmark, and icon safe-area audit
+   ========================================================= */
+body[data-theme="rose"] {
+  --theme-body-bg: #f7efef;
+  --theme-sidebar-bg: #faf3f3;
+  --theme-card: #fffafa;
+  --theme-card-soft: #fbf4f4;
+  --theme-card-tint: #f1e2e5;
+  --theme-input-bg: #fffafa;
+  --theme-segment: #f0e2e5;
+  --theme-text-strong: #6f3745;
+  --theme-text: #79505a;
+  --theme-muted: #9a7c83;
+  --theme-line: #e5d2d7;
+  --theme-line-strong: #d4bcc2;
+  --theme-accent: #6f3745;
+  --theme-accent-contrast: #ffffff;
+  --theme-accent-soft: #f0e1e4;
+  --theme-overlay: rgba(111, 55, 69, 0.28);
+  --theme-focus-ring: rgba(111, 55, 69, 0.11);
+  --theme-shadow: 0 8px 24px rgba(94, 52, 63, 0.08);
+}
+
+body[data-theme="lavender"] {
+  --theme-body-bg: #f1eff7;
+  --theme-sidebar-bg: #f5f3fa;
+  --theme-card: #fbfaff;
+  --theme-card-soft: #f7f5fb;
+  --theme-card-tint: #e9e4f3;
+  --theme-input-bg: #fdfcff;
+  --theme-segment: #e9e5f1;
+  --theme-text-strong: #493d68;
+  --theme-text: #5c5276;
+  --theme-muted: #89819a;
+  --theme-line: #dcd6e8;
+  --theme-line-strong: #c8bfd9;
+  --theme-accent: #493d68;
+  --theme-accent-contrast: #ffffff;
+  --theme-accent-soft: #e8e3f1;
+  --theme-overlay: rgba(73, 61, 104, 0.28);
+  --theme-focus-ring: rgba(73, 61, 104, 0.11);
+  --theme-shadow: 0 8px 24px rgba(68, 57, 92, 0.08);
+}
+
+body[data-theme="forest"] {
+  --theme-body-bg: #12231e;
+  --theme-sidebar-bg: #172b24;
+  --theme-card: #1b3029;
+  --theme-card-soft: #20372f;
+  --theme-card-tint: #28443a;
+  --theme-input-bg: #233c34;
+  --theme-segment: #223a32;
+  --theme-text-strong: #eaf5ef;
+  --theme-text: #d3e5dc;
+  --theme-muted: #a7beb2;
+  --theme-line: rgba(196, 222, 207, 0.17);
+  --theme-line-strong: rgba(210, 231, 218, 0.31);
+  --theme-accent: #d9eee2;
+  --theme-accent-contrast: #173027;
+  --theme-accent-soft: #29483d;
+  --theme-overlay: rgba(4, 14, 10, 0.64);
+  --theme-focus-ring: rgba(217, 238, 226, 0.12);
+  --theme-shadow: 0 14px 34px rgba(2, 10, 7, 0.34);
+}
+
+body[data-theme="charcoal"] {
+  --theme-body-bg: #181a1f;
+  --theme-sidebar-bg: #1e2127;
+  --theme-card: #24272e;
+  --theme-card-soft: #292d35;
+  --theme-card-tint: #30353e;
+  --theme-input-bg: #2c3038;
+  --theme-segment: #2b2f37;
+  --theme-text-strong: #f0f2f6;
+  --theme-text: #dce0e7;
+  --theme-muted: #aab0bb;
+  --theme-line: rgba(210, 215, 225, 0.17);
+  --theme-line-strong: rgba(225, 229, 237, 0.30);
+  --theme-accent: #f0f2f6;
+  --theme-accent-contrast: #20242b;
+  --theme-accent-soft: #343943;
+  --theme-overlay: rgba(0, 0, 0, 0.64);
+  --theme-focus-ring: rgba(240, 242, 246, 0.12);
+  --theme-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+/* Compact horizontal theme picker: many choices, very little vertical space. */
+.theme-section { margin-top: 18px; }
+.theme-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.theme-section-head .home-section-label { margin: 0; }
+.theme-current-name {
+  color: var(--theme-muted);
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.theme-compact-panel {
+  padding: 10px !important;
+  overflow: hidden;
+}
+.theme-chip-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 1px 5px;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.theme-chip-strip::-webkit-scrollbar { display: none; }
+.theme-chip {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--theme-line);
+  border-radius: 999px;
+  background: var(--theme-card);
+  color: var(--theme-text-strong);
+  font-family: var(--ui-sans);
+  font-size: .75rem;
+  font-weight: 700;
+  scroll-snap-align: start;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.theme-chip.active {
+  border-color: var(--theme-accent);
+  box-shadow: inset 0 0 0 1px var(--theme-accent);
+}
+.theme-chip b {
+  color: var(--theme-accent);
+  font-size: .72rem;
+  line-height: 1;
+}
+.theme-mini-swatches {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 1px;
+}
+.theme-mini-swatches i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, .08);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.16);
+}
+.theme-mini-swatches i + i { margin-left: -4px; }
+
+/* Replace the boxed TB monogram with a lightweight travel wordmark. */
+.brand-wordmark {
+  gap: 9px;
+  padding-left: 5px;
+}
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--theme-text-strong);
+  flex: 0 0 auto;
+}
+.brand-mark-svg {
+  width: 25px;
+  height: 25px;
+  stroke-width: 1.55;
+}
+.brand-wordmark .brand-title {
+  font-size: 1.34rem;
+  line-height: 1.05;
+}
+
+/* Icon audit: every SVG gets a safe inset and may render beyond its own box.
+   This prevents airport, flight, bed, route, and small navigation icons from
+   being clipped by Safari's SVG viewport. */
+.app-icon,
+.nav-icon-svg,
+.mobile-nav-icon-svg,
+.header-icon-svg,
+.date-arrow-svg,
+.focused-date-icon,
+.quick-action-icon,
+.itinerary-type-icon-svg,
+.more-dots-svg,
+.transport-method-svg,
+.empty-calendar-icon,
+.simple-progress-svg,
+.brand-mark-svg {
+  overflow: visible !important;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.nav-emoji,
+.mobile-tab-icon,
+.itinerary-type-orb,
+.transport-icon,
+.more-menu-icon,
+.budget-wallet-icon,
+.focused-empty-icon,
+.icon-button,
+.itinerary-calendar-icon {
+  overflow: visible !important;
+}
+
+/* Keep a reliable visual margin inside every icon container. */
+.nav-icon-svg { width: 19px; height: 19px; }
+.mobile-nav-icon-svg { width: 19px; height: 19px; }
+.header-icon-svg { width: 21px; height: 21px; }
+.quick-action-icon { width: 14px; height: 14px; }
+.itinerary-type-icon-svg { width: 23px; height: 23px; }
+.transport-method-svg { width: 20px; height: 20px; }
+.more-dots-svg { width: 19px; height: 19px; }
+
+/* Airport used to extend outside the 24×24 viewBox; the icon path is now
+   redrawn inside a safe 4–20 coordinate area. Give its orb a little extra room. */
+.itinerary-type-orb .itinerary-type-icon-svg {
+  max-width: 72%;
+  max-height: 72%;
+}
+
+@media screen and (max-width: 520px) {
+  .brand-wordmark { padding-left: 2px; }
+  .brand-mark { width: 25px; height: 25px; }
+  .brand-mark-svg { width: 22px; height: 22px; }
+  .brand-wordmark .brand-title { font-size: 1.25rem; }
+  .theme-compact-panel { padding: 8px !important; }
+  .theme-chip { min-height: 36px; padding: 6px 9px; font-size: .71rem; }
+}
