@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.0.0-oat-redesign";
+const APP_VERSION = "2.1.0-mockup-match";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -13,20 +13,61 @@ function googleScriptUrl() {
   return window.TRIPBOARD_GOOGLE_SCRIPT_URL || "";
 }
 
+function iconSvg(name, className = "app-icon") {
+  const icons = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
+    route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
+    plane: '<path d="m2 16 20-8-8 20-2-8-8-2Z"/><path d="m12 20 3-3M4 18l6-6"/>',
+    bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
+    luggage: '<rect x="6" y="6" width="12" height="15" rx="2"/><path d="M9 6V4h6v2M9 10v7M15 10v7M4 21h16"/>',
+    ticket: '<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 6v12"/>',
+    wallet: '<path d="M3 7h16a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2V7Z"/><path d="M3 7V5a2 2 0 0 1 2-2h12v4M16 12h5"/>',
+    check: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 12 3 3 7-7"/>',
+    pin: '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    alert: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
+    sync: '<path d="M20 7h-5V2"/><path d="M20 7a8 8 0 1 0 1 7M4 17h5v5"/><path d="M4 17a8 8 0 0 0 14 3"/>',
+    more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+    chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+    chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    museum: '<path d="m3 9 9-5 9 5M5 10h14M6 10v8M10 10v8M14 10v8M18 10v8M4 20h16"/>',
+    food: '<path d="M6 3v8M3 3v5a3 3 0 0 0 6 0V3M6 11v10M15 3v18M15 3c4 2 4 7 0 9"/>',
+    cafe: '<path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M7 3v2M11 3v2"/>',
+    shopping: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    activity: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    airport: '<path d="m2 16 20-8-8 20-2-8-8-2Z"/><path d="m12 20 3-3M4 18l6-6"/>',
+    station: '<rect x="5" y="3" width="14" height="16" rx="3"/><path d="M8 7h8M8 14h8M8 19l-2 2M16 19l2 2"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
+    moon: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
+    rest: '<path d="M4 19h16M6 16h12M8 16V8h8v8M10 8V5h4v3"/>',
+    fallback: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
+  };
+  const body = icons[name] || icons.fallback;
+  return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+}
+
+function itineraryTypeIcon(type = "") {
+  const mapping = {
+    "景點": "museum", "展覽": "museum", "餐廳": "food", "咖啡廳": "cafe",
+    "購物": "shopping", "活動": "activity", "機場": "airport", "車站": "station",
+    "夜景": "moon", "休息": "rest", "住宿": "bed", "交通": "route", "備案": "pin"
+  };
+  return iconSvg(mapping[type] || "pin", "itinerary-type-icon-svg");
+}
+
 const navItems = [
-  { key: "dashboard", label: "首頁", emoji: "⌂" },
-  { key: "itinerary", label: "行程", emoji: "▦" },
-  { key: "transport", label: "交通", emoji: "↔" },
-  { key: "flights", label: "航班", emoji: "✈" },
-  { key: "stays", label: "住宿", emoji: "▱" },
-  { key: "packing", label: "行李", emoji: "□" },
-  { key: "documents", label: "文件", emoji: "⌑" },
-  { key: "budget", label: "預算", emoji: "$" },
-  { key: "todos", label: "待辦", emoji: "✓" },
-  { key: "places", label: "地點庫", emoji: "⌖" },
-  { key: "emergency", label: "緊急資訊", emoji: "!" },
-  { key: "settings", label: "同步設定", mobileLabel: "同步", emoji: "⚙" },
-  { key: "more", label: "更多", emoji: "•••" }
+  { key: "dashboard", label: "首頁", icon: "home" },
+  { key: "itinerary", label: "行程", icon: "calendar" },
+  { key: "transport", label: "交通", icon: "route" },
+  { key: "flights", label: "航班", icon: "plane" },
+  { key: "stays", label: "住宿", icon: "bed" },
+  { key: "packing", label: "行李", icon: "luggage" },
+  { key: "documents", label: "文件", icon: "ticket" },
+  { key: "budget", label: "預算", icon: "wallet" },
+  { key: "todos", label: "待辦", icon: "check" },
+  { key: "places", label: "地點庫", icon: "pin" },
+  { key: "emergency", label: "緊急資訊", icon: "alert" },
+  { key: "settings", label: "同步設定", mobileLabel: "同步", icon: "sync" },
+  { key: "more", label: "更多", icon: "more" }
 ];
 
 // 簡化手機導覽：常用功能常駐，其餘集中在「更多」。
@@ -92,6 +133,39 @@ function formatDateLong(value) {
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" }).format(date);
+}
+
+function formatFocusedDate(value) {
+  if (!value) return "日期未設定";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekday = new Intl.DateTimeFormat("zh-TW", { weekday: "short" }).format(date);
+  return `${month}月${day}日（${weekday}）`;
+}
+
+function addMinutesToTime(time, minutes) {
+  if (!time || !Number.isFinite(minutes)) return "";
+  const parts = String(time).split(":").map(Number);
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return "";
+  const total = (parts[0] * 60 + parts[1] + minutes + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function inferTransportEndTime(item) {
+  const match = String(item.duration || "").match(/(\d+)/);
+  if (!match) return "";
+  return addMinutesToTime(item.startTime, Number(match[1]));
+}
+
+function resolveFocusedDate(days, items) {
+  if (!days.length) return "";
+  if (ui.filterDate && ui.filterDate !== "all" && days.includes(ui.filterDate)) return ui.filterDate;
+  const today = todayISO();
+  if (days.includes(today)) return today;
+  const firstScheduled = items.find((item) => days.includes(item.date))?.date;
+  return firstScheduled || days[0];
 }
 
 function formatDateTime(value) {
@@ -290,7 +364,7 @@ function renderSidebar(trip) {
       <nav class="nav">
         ${navItems.filter((item) => item.key !== "more").map((item) => `
           <button type="button" data-view="${item.key}" class="${ui.view === item.key ? "active" : ""}">
-            <span class="nav-emoji">${item.emoji}</span><span class="nav-label">${item.label}</span>
+            <span class="nav-emoji">${iconSvg(item.icon, "nav-icon-svg")}</span><span class="nav-label">${item.label}</span>
           </button>
         `).join("")}
       </nav>
@@ -310,7 +384,7 @@ function renderMobileTabs() {
         const active = item.key === "more" ? !primaryViews.has(ui.view) : ui.view === item.key;
         return `
           <button type="button" data-view="${item.key}" class="${active ? "active" : ""}">
-            <span class="mobile-tab-icon">${item.emoji}</span><span>${item.mobileLabel || item.label}</span>
+            <span class="mobile-tab-icon">${iconSvg(item.icon, "mobile-nav-icon-svg")}</span><span>${item.mobileLabel || item.label}</span>
           </button>
         `;
       }).join("")}
@@ -676,37 +750,87 @@ function renderItinerary(trip) {
   const days = daysBetween(trip.startDate, trip.endDate);
   const items = sortByDateTime(byTrip("itineraryItems"));
   const transports = sortByDateTime(byTrip("transportSegments"));
-  const dateButtons = [`<button class="${ui.filterDate === "all" ? "active" : ""}" data-filter-date="all">全部</button>`]
-    .concat(days.map((day, index) => `<button class="${ui.filterDate === day ? "active" : ""}" data-filter-date="${day}">D${index + 1}</button>`)).join("");
-  const showDays = ui.filterDate === "all" ? days : [ui.filterDate];
+  const focusedDate = resolveFocusedDate(days, items);
+  ui.filterDate = focusedDate || "all";
+  const focusedIndex = Math.max(0, days.indexOf(focusedDate));
+  const previousDate = focusedIndex > 0 ? days[focusedIndex - 1] : "";
+  const nextDate = focusedIndex >= 0 && focusedIndex < days.length - 1 ? days[focusedIndex + 1] : "";
+  const dayItems = items.filter((item) => item.date === focusedDate);
+  const dayTransports = transports.filter((item) => item.date === focusedDate);
 
   return `
-    <div class="itinerary-view">
-      ${topbar({
-        eyebrow: "Itinerary",
-        title: "每日行程",
-        subtitle: "先看時間、地點與重點；需要時再展開完整資訊。",
-        actions: `<button class="btn" data-action="export-itinerary-pdf">匯出 PDF</button><button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
-      })}
-      <div class="seg-control">${dateButtons}</div>
-      <section class="section timeline">
-        ${showDays.map((day, index) => renderDayTimeline(day, days.indexOf(day) + 1 || index + 1, items.filter((item) => item.date === day), transports.filter((item) => item.date === day))).join("") || emptyBlock("日期尚未設定", "請先編輯旅程的開始與結束日期。")}
+    <div class="itinerary-view mockup-itinerary-view">
+      <header class="itinerary-screen-header">
+        <button class="icon-button itinerary-back" data-view="dashboard" aria-label="返回首頁">${iconSvg("chevronLeft", "header-icon-svg")}</button>
+        <h1>每日行程</h1>
+        <span class="itinerary-calendar-icon" aria-hidden="true">${iconSvg("calendar", "header-icon-svg")}</span>
+      </header>
+
+      <div class="focused-date-navigator" aria-label="切換日期">
+        <button class="date-arrow" ${previousDate ? `data-filter-date="${previousDate}"` : "disabled"} aria-label="前一天">${iconSvg("chevronLeft", "date-arrow-svg")}</button>
+        <div class="focused-date-label">
+          ${iconSvg("calendar", "focused-date-icon")}
+          <strong>${escapeHtml(formatFocusedDate(focusedDate))}</strong>
+          <span>Day ${focusedIndex + 1}</span>
+        </div>
+        <button class="date-arrow" ${nextDate ? `data-filter-date="${nextDate}"` : "disabled"} aria-label="後一天">${iconSvg("chevronRight", "date-arrow-svg")}</button>
+      </div>
+
+      <div class="itinerary-quick-actions">
+        <button class="quiet-action" data-action="export-itinerary-pdf">${iconSvg("ticket", "quick-action-icon")}<span>匯出 PDF</span></button>
+        <button class="quiet-action" data-action="new-transport" data-date="${focusedDate}">${iconSvg("route", "quick-action-icon")}<span>交通</span></button>
+        <button class="quiet-action primary" data-action="new-itinerary" data-date="${focusedDate}"><span class="plus-mark">＋</span><span>行程</span></button>
+      </div>
+
+      <section class="focused-day-timeline" aria-label="${escapeHtml(formatFocusedDate(focusedDate))}行程">
+        ${renderFocusedDayTimeline(focusedDate, dayItems, dayTransports)}
       </section>
     </div>
   `;
 }
 
-function renderDayTimeline(day, dayNo, items, transports) {
+function buildTimelineBlocks(items, transports) {
   const blocks = [];
-  for (const item of items) {
-    const relatedTransport = transports.find((t) => t.startTime && item.startTime && t.startTime <= item.startTime && !blocks.includes(t.id));
+  const usedTransportIds = new Set();
+  const sortedItems = sortByDateTime(items);
+  const sortedTransports = sortByDateTime(transports);
+
+  for (const item of sortedItems) {
+    const candidates = sortedTransports.filter((transport) => !usedTransportIds.has(transport.id) && transport.startTime && item.startTime && transport.startTime <= item.startTime);
+    const relatedTransport = candidates.at(-1);
     if (relatedTransport) {
-      blocks.push(relatedTransport.id);
-      blocks.push(renderTransportInline(relatedTransport));
+      usedTransportIds.add(relatedTransport.id);
+      blocks.push({ type: "transport", value: relatedTransport });
     }
-    blocks.push(renderTimelineItem(item));
+    blocks.push({ type: "item", value: item });
   }
-  const unusedTransports = transports.filter((t) => !blocks.includes(t.id)).map(renderTransportInline).join("");
+
+  sortedTransports
+    .filter((transport) => !usedTransportIds.has(transport.id))
+    .forEach((transport) => blocks.push({ type: "transport", value: transport }));
+
+  return blocks.sort((a, b) => `${a.value.startTime || "99:99"}`.localeCompare(`${b.value.startTime || "99:99"}`));
+}
+
+function renderFocusedDayTimeline(day, items, transports) {
+  const blocks = buildTimelineBlocks(items, transports);
+  if (!day) return emptyBlock("日期尚未設定", "請先編輯旅程的開始與結束日期。");
+  if (!blocks.length) {
+    return `
+      <div class="focused-empty-state">
+        <div class="focused-empty-icon">${iconSvg("calendar", "empty-calendar-icon")}</div>
+        <strong>這一天還沒有安排</strong>
+        <span>新增景點、餐廳、活動或交通。</span>
+        <div>
+          <button class="btn small" data-action="new-transport" data-date="${day}">＋ 交通</button>
+          <button class="btn small primary" data-action="new-itinerary" data-date="${day}">＋ 行程</button>
+        </div>
+      </div>`;
+  }
+  return `<div class="single-day-timeline">${blocks.map((block) => block.type === "item" ? renderTimelineItem(block.value) : renderTransportInline(block.value)).join("")}</div>`;
+}
+
+function renderDayTimeline(day, dayNo, items, transports) {
   return `
     <article class="card day-card">
       <div class="day-head">
@@ -716,11 +840,7 @@ function renderDayTimeline(day, dayNo, items, transports) {
           <button class="btn small primary" data-action="new-itinerary" data-date="${day}">＋ 行程</button>
         </div>
       </div>
-      <div class="timeline-body">
-        ${blocks.filter((x) => typeof x === "string" && x.trim().startsWith("<")).join("")}
-        ${unusedTransports}
-        ${items.length || transports.length ? "" : `<div class="empty quiet-empty"><strong>這一天還沒有安排</strong>新增景點、餐廳、活動或交通。</div>`}
-      </div>
+      <div class="timeline-body">${buildTimelineBlocks(items, transports).map((block) => block.type === "item" ? renderTimelineItem(block.value) : renderTransportInline(block.value)).join("")}</div>
     </article>
   `;
 }
@@ -734,53 +854,71 @@ function renderTimelineItem(item) {
     : `<div class="time-range single"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div></div>`;
 
   const summaryTags = [
-    item.type ? `<span class="badge dark">${escapeHtml(item.type)}</span>` : "",
+    item.type ? `<span class="badge">${escapeHtml(item.type)}</span>` : "",
     item.priority ? `<span class="badge">${escapeHtml(item.priority)}</span>` : "",
     item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
   ].filter(Boolean).slice(0, 3).join("");
 
   return `
-    <div class="timeline-item ${expanded ? "is-expanded" : ""}">
+    <div class="timeline-item mockup-timeline-item ${expanded ? "is-expanded" : ""}">
       <div class="timeline-time">${timeBlock}</div>
-      <article class="timeline-content simplified-item-card">
-        <div class="item-row simplified-item-head">
-          <div class="simplified-item-copy">
-            <div class="item-title">${escapeHtml(item.title)}</div>
-            <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+      <article class="timeline-content simplified-item-card mockup-itinerary-card">
+        <div class="mockup-card-layout">
+          <div class="itinerary-type-orb">${itineraryTypeIcon(item.type)}</div>
+          <div class="mockup-card-main">
+            <div class="item-row simplified-item-head">
+              <div class="simplified-item-copy">
+                <div class="item-title">${escapeHtml(item.title)}</div>
+                <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+              </div>
+              <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}" aria-label="${expanded ? "收合資訊" : "展開更多資訊"}">${iconSvg("more", "more-dots-svg")}</button>
+            </div>
+            ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
+            <div class="itinerary-extra ${expanded ? "open" : ""}">
+              <div class="badges detail-badges">
+                ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
+                ${item.lastEntry ? `<span class="badge">最後入場 ${escapeHtml(item.lastEntry)}</span>` : ""}
+                ${item.budget ? `<span class="badge green">預算 ${currency(item.budget, activeTrip().currency || "TWD")}</span>` : ""}
+                ${item.weatherType ? `<span class="badge">${escapeHtml(item.weatherType)}</span>` : ""}
+              </div>
+              ${renderLinks(item)}
+              ${item.notes ? `<div class="item-meta item-notes">${escapeHtml(item.notes)}</div>` : ""}
+              <div class="expanded-actions">
+                <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
+                <button class="btn small danger" data-action="delete" data-collection="itineraryItems" data-id="${item.id}">刪除</button>
+              </div>
+            </div>
+            <button class="expand-details-button" data-action="toggle-itinerary-details" data-id="${item.id}">${expanded ? "收合資訊" : "展開更多"}<span>${expanded ? "⌃" : "⌄"}</span></button>
           </div>
-          <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}">${expanded ? "−" : "•••"}</button>
         </div>
-        ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
-        <div class="itinerary-extra ${expanded ? "open" : ""}">
-          <div class="badges detail-badges">
-            ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
-            ${item.lastEntry ? `<span class="badge">最後入場 ${escapeHtml(item.lastEntry)}</span>` : ""}
-            ${item.budget ? `<span class="badge green">預算 ${currency(item.budget, activeTrip().currency || "TWD")}</span>` : ""}
-            ${item.weatherType ? `<span class="badge">${escapeHtml(item.weatherType)}</span>` : ""}
-          </div>
-          ${renderLinks(item)}
-          ${item.notes ? `<div class="item-meta item-notes">${escapeHtml(item.notes)}</div>` : ""}
-          <div class="expanded-actions">
-            <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
-            <button class="btn small danger" data-action="delete" data-collection="itineraryItems" data-id="${item.id}">刪除</button>
-          </div>
-        </div>
-        <button class="expand-details-button" data-action="toggle-itinerary-details" data-id="${item.id}">${expanded ? "收合資訊" : "展開更多"}<span>${expanded ? "⌃" : "⌄"}</span></button>
       </article>
     </div>
   `;
 }
 
 function renderTransportInline(item) {
+  const startLabel = escapeHtml(item.startTime || "");
+  const endLabel = escapeHtml(inferTransportEndTime(item));
   return `
-    <div class="transport-inline slim-transport-row">
-      <div class="transport-inline-main">
-        <span class="transport-icon">↔</span>
-        <span><strong>${escapeHtml(item.method || "交通")}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${item.duration ? `・${escapeHtml(item.duration)}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+    <div class="timeline-transport-item">
+      <div class="transport-time-column">
+        ${startLabel ? `<strong>${startLabel}</strong>` : ""}
+        ${endLabel ? `<span>${endLabel}</span>` : ""}
       </div>
-      <div class="transport-inline-actions">
-        <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
-        <button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>
+      <div class="transport-node-column">
+        <span class="transport-node"></span>
+        <span class="transport-node-line"></span>
+        <span class="transport-node end"></span>
+      </div>
+      <div class="transport-inline slim-transport-row">
+        <div class="transport-inline-main">
+          <span class="transport-icon">${iconSvg(item.method === "步行" ? "route" : item.method === "飛機" ? "plane" : item.method === "火車" || item.method === "地鐵" || item.method === "高鐵" ? "station" : "route", "transport-method-svg")}</span>
+          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${item.duration ? `・${escapeHtml(item.duration)}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+        </div>
+        <div class="transport-inline-actions">
+          <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
+          <button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>
+        </div>
       </div>
     </div>
   `;
@@ -1393,7 +1531,7 @@ function bindGlobalEvents() {
 
   document.querySelectorAll("[data-action='switch-trip']").forEach((select) => select.addEventListener("change", (event) => {
     state.activeTripId = event.target.value;
-    ui.filterDate = "all";
+    ui.filterDate = "";
     saveState(false);
     render();
   }));

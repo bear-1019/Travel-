@@ -1372,3 +1372,471 @@ html, body { width: 100%; overflow-x: hidden; }
 @media screen and (max-width: 960px) {
   .home-dashboard .topbar { display: none; }
 }
+
+/* =========================================================
+   TripBoard 2.1 — mockup-matched itinerary and icon system
+   ========================================================= */
+:root {
+  --oat-bg: #f5f0e7;
+  --oat-card: #fffdf8;
+  --oat-card-soft: #faf6ee;
+  --navy: #152746;
+  --navy-muted: #34435d;
+  --warm-text: #514f4a;
+  --warm-muted: #8b867d;
+  --warm-line: #ddd5c9;
+  --display-serif: "FangSong", "STFangsong", "Songti TC", "STSong", "Noto Serif TC", "PMingLiU", serif;
+  --ui-sans: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-family: var(--ui-sans);
+}
+
+body {
+  background: var(--oat-bg) !important;
+  background-image: none !important;
+  color: var(--navy);
+  font-family: var(--ui-sans);
+}
+
+h1, h2, h3,
+.brand-title,
+.day-title,
+.item-title,
+.focused-date-label strong,
+.itinerary-screen-header h1,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span {
+  font-family: var(--display-serif);
+}
+
+.app-icon,
+.nav-icon-svg,
+.mobile-nav-icon-svg,
+.header-icon-svg,
+.date-arrow-svg,
+.focused-date-icon,
+.quick-action-icon,
+.itinerary-type-icon-svg,
+.more-dots-svg,
+.transport-method-svg,
+.empty-calendar-icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+
+.nav-emoji {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+.nav-icon-svg { width: 20px; height: 20px; }
+
+.mobile-tab-icon {
+  width: 24px;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center;
+}
+.mobile-nav-icon-svg { width: 22px; height: 22px; stroke-width: 1.7; }
+
+/* Exact daily itinerary structure: title, focused day, then a single timeline. */
+.mockup-itinerary-view {
+  width: min(100%, 680px);
+  margin: 0 auto;
+  padding-bottom: 34px;
+}
+
+.itinerary-screen-header {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  min-height: 60px;
+  margin-bottom: 10px;
+}
+.itinerary-screen-header h1 {
+  margin: 0;
+  text-align: center;
+  color: var(--navy);
+  font-size: clamp(1.65rem, 4.8vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1.15;
+}
+.icon-button,
+.itinerary-calendar-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--navy);
+}
+.icon-button {
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.icon-button:active { background: rgba(21,39,70,.06); }
+.header-icon-svg { width: 24px; height: 24px; }
+
+.focused-date-navigator {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 14px;
+  width: min(100%, 430px);
+  margin: 8px auto 12px;
+}
+.date-arrow {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(70,65,57,.08);
+  border-radius: 50%;
+  background: var(--oat-card);
+  color: var(--navy);
+  box-shadow: 0 5px 16px rgba(58,48,37,.06);
+}
+.date-arrow:disabled { opacity: .28; cursor: default; }
+.date-arrow-svg { width: 18px; height: 18px; }
+.focused-date-label {
+  display: grid;
+  grid-template-columns: 22px auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: 10px;
+  color: var(--navy);
+  text-align: center;
+}
+.focused-date-label strong {
+  font-size: 1.04rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.focused-date-label span {
+  grid-column: 1 / -1;
+  margin-top: 3px;
+  color: var(--warm-muted);
+  font-size: .69rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+.focused-date-icon { width: 20px; height: 20px; }
+
+.itinerary-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 7px auto 24px;
+}
+.quiet-action {
+  min-height: 36px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(70,65,57,.10);
+  border-radius: 999px;
+  background: rgba(255,253,248,.82);
+  color: var(--navy-muted);
+  font-size: .76rem;
+  font-weight: 650;
+  box-shadow: none;
+}
+.quiet-action.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+.quick-action-icon { width: 15px; height: 15px; }
+.plus-mark { font-size: 1rem; line-height: 1; }
+
+.focused-day-timeline {
+  position: relative;
+  width: 100%;
+  padding: 2px 0 10px;
+}
+.single-day-timeline {
+  display: grid;
+  gap: 20px;
+}
+
+/* Timeline item styled like the concept mockup. */
+.mockup-timeline-item {
+  display: grid;
+  grid-template-columns: 74px minmax(0,1fr);
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+}
+.mockup-timeline-item .timeline-time {
+  padding: 18px 0 16px;
+  display: flex;
+  align-items: stretch;
+  min-height: 154px;
+}
+.mockup-timeline-item .time-range {
+  grid-template-columns: minmax(0,1fr) 12px;
+  gap: 0 7px;
+}
+.mockup-timeline-item .time-range.has-end {
+  grid-template-rows: auto minmax(58px, 1fr) auto;
+}
+.mockup-timeline-item .time-mark strong {
+  color: var(--navy);
+  font-size: .92rem;
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+.mockup-timeline-item .time-dot {
+  width: 8px;
+  height: 8px;
+}
+.mockup-timeline-item .start-dot {
+  background: var(--navy);
+  box-shadow: 0 0 0 3px var(--oat-bg);
+}
+.mockup-timeline-item .end-dot {
+  background: var(--oat-bg);
+  border: 1.5px solid #a59d91;
+  box-shadow: 0 0 0 2px var(--oat-bg);
+}
+.mockup-timeline-item .time-range-line {
+  width: 1px;
+  min-height: 58px;
+  margin: 4px 0;
+  background: #cfc6b9;
+}
+
+.mockup-itinerary-card.timeline-content {
+  padding: 0;
+  border: 1px solid rgba(76,68,58,.09);
+  border-radius: 22px;
+  background: rgba(255,253,248,.94);
+  box-shadow: 0 7px 22px rgba(59,50,39,.045);
+  overflow: hidden;
+}
+.mockup-card-layout {
+  display: grid;
+  grid-template-columns: 62px minmax(0,1fr);
+  gap: 14px;
+  padding: 17px 17px 12px;
+  min-width: 0;
+}
+.itinerary-type-orb {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--navy);
+  background: #ece6db;
+  border: 1px solid rgba(63,57,50,.06);
+}
+.itinerary-type-icon-svg { width: 27px; height: 27px; stroke-width: 1.55; }
+.mockup-card-main { min-width: 0; }
+.mockup-itinerary-card .simplified-item-head { align-items: flex-start; gap: 8px; }
+.mockup-itinerary-card .item-title {
+  color: var(--navy);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .035em;
+  line-height: 1.35;
+}
+.mockup-itinerary-card .item-meta {
+  margin-top: 2px;
+  color: #76736d;
+  font-size: .79rem;
+  line-height: 1.45;
+}
+.more-dot-button { padding: 1px 0 8px 8px; color: var(--navy); }
+.more-dots-svg { width: 21px; height: 21px; fill: currentColor; stroke: none; }
+.mockup-itinerary-card .summary-badges { margin-top: 11px; gap: 7px; }
+.mockup-itinerary-card .badge {
+  padding: 5px 9px;
+  background: #eee8df;
+  color: #5f5a53;
+  font-size: .68rem;
+  font-weight: 650;
+}
+.mockup-itinerary-card .badge:first-child {
+  background: #e6dfd4;
+  color: var(--navy);
+}
+.mockup-itinerary-card .expand-details-button {
+  padding: 13px 1px 1px;
+  color: #777168;
+  font-size: .7rem;
+}
+.mockup-itinerary-card .itinerary-extra {
+  margin-top: 11px;
+  padding-top: 11px;
+}
+
+/* Thin transport segment with its own timeline time. */
+.timeline-transport-item {
+  display: grid;
+  grid-template-columns: 74px 12px minmax(0,1fr);
+  gap: 0 9px;
+  align-items: center;
+  min-width: 0;
+}
+.transport-time-column {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  align-self: stretch;
+  align-content: center;
+  color: #706d67;
+  font-size: .76rem;
+  line-height: 1;
+}
+.transport-time-column strong,
+.transport-time-column span { font-weight: 600; }
+.transport-node-column {
+  align-self: stretch;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  min-height: 58px;
+  padding: 4px 0;
+}
+.transport-node {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.4px solid #a79f93;
+  background: var(--oat-bg);
+}
+.transport-node-line { width: 1px; background: #d4cbbf; }
+.timeline-transport-item .slim-transport-row {
+  margin: 0;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #d9d1c5;
+  border-bottom: 1px solid #d9d1c5;
+  background: transparent;
+}
+.timeline-transport-item .transport-inline-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.timeline-transport-item .transport-icon {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #777168;
+}
+.transport-method-svg { width: 22px; height: 22px; }
+.timeline-transport-item .transport-inline-main > span:last-child { min-width: 0; }
+.timeline-transport-item .transport-inline-main strong {
+  display: block;
+  color: #625e57;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.timeline-transport-item .transport-inline-main small {
+  display: block;
+  margin-top: 3px;
+  color: #8a857c;
+  font-size: .69rem;
+  line-height: 1.4;
+}
+.timeline-transport-item .transport-inline-actions { opacity: .72; }
+
+.focused-empty-state {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 36px 22px;
+  text-align: center;
+  border: 1px dashed #d4cbbf;
+  border-radius: 24px;
+  color: var(--warm-muted);
+  background: rgba(255,253,248,.48);
+}
+.focused-empty-state strong { color: var(--navy); font-family: var(--display-serif); font-size: 1.1rem; }
+.focused-empty-state > div:last-child { display: flex; gap: 8px; margin-top: 7px; }
+.focused-empty-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: #eae3d9; color: var(--navy); }
+.empty-calendar-icon { width: 24px; height: 24px; }
+
+/* Bottom navigation uses stable inline SVG icons instead of font glyphs. */
+.mobile-tabs button {
+  font-family: var(--ui-sans);
+}
+.mobile-tabs button.active .mobile-nav-icon-svg { stroke-width: 2.2; }
+.mobile-tabs button.active span:last-child { font-weight: 700; }
+
+@media screen and (max-width: 960px) {
+  .view-itinerary .sidebar { display: none; }
+  .view-itinerary .main {
+    padding: calc(10px + var(--safe-top)) 18px calc(94px + var(--safe-bottom));
+  }
+  .mockup-itinerary-view { max-width: 620px; }
+  .itinerary-screen-header { margin-bottom: 5px; }
+  .focused-date-navigator { margin-top: 4px; }
+
+  .mobile-tabs {
+    padding: 7px 10px 6px;
+    border-radius: 22px;
+  }
+  .mobile-tabs button {
+    gap: 3px;
+    font-size: .62rem;
+  }
+  .mobile-tabs button.active::after { margin-top: 1px; }
+}
+
+@media screen and (max-width: 520px) {
+  .view-itinerary .main { padding-left: 14px; padding-right: 14px; }
+  .itinerary-screen-header {
+    grid-template-columns: 38px minmax(0,1fr) 38px;
+    min-height: 52px;
+  }
+  .itinerary-screen-header h1 { font-size: 1.62rem; }
+  .icon-button, .itinerary-calendar-icon { width: 36px; height: 36px; }
+  .header-icon-svg { width: 22px; height: 22px; }
+  .focused-date-navigator { grid-template-columns: 36px minmax(0,1fr) 36px; gap: 8px; }
+  .date-arrow { width: 34px; height: 34px; }
+  .focused-date-label { column-gap: 7px; }
+  .focused-date-label strong { font-size: .92rem; }
+  .itinerary-quick-actions { margin-bottom: 21px; gap: 6px; }
+  .quiet-action { min-height: 34px; padding: 7px 10px; font-size: .69rem; }
+
+  .single-day-timeline { gap: 17px; }
+  .mockup-timeline-item { grid-template-columns: 61px minmax(0,1fr); gap: 9px; }
+  .mockup-timeline-item .timeline-time { padding-top: 17px; padding-bottom: 13px; min-height: 145px; }
+  .mockup-timeline-item .time-range { grid-template-columns: minmax(0,1fr) 10px; gap: 0 5px; }
+  .mockup-timeline-item .time-mark strong { font-size: .78rem; }
+  .mockup-card-layout { grid-template-columns: 48px minmax(0,1fr); gap: 10px; padding: 14px 13px 10px; }
+  .itinerary-type-orb { width: 46px; height: 46px; }
+  .itinerary-type-icon-svg { width: 22px; height: 22px; }
+  .mockup-itinerary-card .item-title { font-size: .94rem; }
+  .mockup-itinerary-card .item-meta { font-size: .72rem; }
+  .mockup-itinerary-card .badge { font-size: .62rem; padding: 4px 7px; }
+
+  .timeline-transport-item { grid-template-columns: 61px 10px minmax(0,1fr); gap: 0 5px; }
+  .transport-time-column { font-size: .68rem; }
+  .timeline-transport-item .transport-inline-actions { display: none; }
+  .timeline-transport-item .transport-inline-main strong { font-size: .72rem; }
+  .timeline-transport-item .transport-inline-main small { font-size: .63rem; }
+}
+
+@media screen and (max-width: 370px) {
+  .view-itinerary .main { padding-left: 10px; padding-right: 10px; }
+  .mockup-timeline-item { grid-template-columns: 55px minmax(0,1fr); gap: 6px; }
+  .timeline-transport-item { grid-template-columns: 55px 9px minmax(0,1fr); gap: 0 4px; }
+  .mockup-card-layout { grid-template-columns: 42px minmax(0,1fr); padding-inline: 11px; }
+  .itinerary-type-orb { width: 40px; height: 40px; }
+  .itinerary-type-icon-svg { width: 20px; height: 20px; }
+}
