@@ -1,8 +1,17 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.5.0-fangsong";
+const APP_VERSION = "2.6.0-themes";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
+const THEME_STORAGE_KEY = "tripboard_theme_v1";
+
+const THEMES = [
+  { key: "oat", label: "奶茶藍", description: "溫暖奶茶底・深藍字體", preview: ["#f5f0e7", "#fffdf8", "#152746"], dark: false, themeColor: "#f5f0e7" },
+  { key: "midnight", label: "夜幕藍", description: "深藍夜色・柔霧灰白", preview: ["#121826", "#1f2937", "#e5edf9"], dark: true, themeColor: "#121826" },
+  { key: "mist", label: "晨霧灰", description: "霧灰白底・乾淨俐落", preview: ["#edf1f4", "#ffffff", "#304254"], dark: false, themeColor: "#edf1f4" },
+  { key: "sage", label: "鼠尾草綠", description: "淡綠米色・墨綠文字", preview: ["#eef3ed", "#fbfdf9", "#234137"], dark: false, themeColor: "#eef3ed" }
+];
+const THEME_MAP = Object.fromEntries(THEMES.map((theme) => [theme.key, theme]));
 
 function hasGoogleSyncConfig() {
   const url = window.TRIPBOARD_GOOGLE_SCRIPT_URL || "";
@@ -73,6 +82,37 @@ const navItems = [
 // 簡化手機導覽：常用功能常駐，其餘集中在「更多」。
 const mobileNavItems = ["dashboard", "itinerary", "flights", "stays", "more"];
 
+function loadThemePreference() {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    return THEME_MAP[saved] ? saved : "oat";
+  } catch (error) {
+    return "oat";
+  }
+}
+
+function currentTheme() {
+  return THEME_MAP[ui?.theme] || THEMES[0];
+}
+
+function applyTheme() {
+  const theme = currentTheme();
+  document.documentElement.dataset.theme = theme.key;
+  document.body.dataset.theme = theme.key;
+  document.documentElement.style.colorScheme = theme.dark ? "dark" : "light";
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", theme.themeColor);
+}
+
+function setThemePreference(key, showToast = true) {
+  if (!THEME_MAP[key]) return;
+  ui.theme = key;
+  localStorage.setItem(THEME_STORAGE_KEY, key);
+  applyTheme();
+  render();
+  if (showToast) toast("已切換為「" + THEME_MAP[key].label + "」主題");
+}
+
 const collections = [
   "trips", "flights", "stays", "itineraryItems", "transportSegments", "packingItems",
   "documents", "expenses", "todos", "places", "emergencyInfos"
@@ -85,7 +125,8 @@ let ui = {
   session: null,
   syncStatus: "local",
   cloudUpdatedAt: null,
-  expandedItineraryIds: new Set()
+  expandedItineraryIds: new Set(),
+  theme: loadThemePreference()
 };
 
 const app = document.querySelector("#app");
@@ -98,6 +139,7 @@ async function init() {
     state = createSeedState();
     saveState(false);
   }
+  applyTheme();
   registerServiceWorker();
   await initSupabaseSession();
   render();
@@ -338,6 +380,7 @@ function saveState(show = true) {
 }
 
 function render() {
+  applyTheme();
   const trip = activeTrip();
   app.innerHTML = `
     <div class="app-shell view-${ui.view}">
@@ -1409,6 +1452,36 @@ function renderEmergencyCard(item) {
   `;
 }
 
+function renderThemeSelector() {
+  return `
+    <section class="more-group">
+      <div class="home-section-label">佈景主題</div>
+      <div class="card theme-panel">
+        <div class="theme-grid">
+          ${THEMES.map((theme) => `
+            <button
+              type="button"
+              class="theme-option ${ui.theme === theme.key ? "active" : ""} ${theme.dark ? "dark" : ""}"
+              data-action="set-theme"
+              data-theme="${theme.key}"
+              aria-pressed="${ui.theme === theme.key ? "true" : "false"}"
+            >
+              <span class="theme-swatch-row">
+                ${theme.preview.map((color) => `<span class="theme-swatch" style="background:${color}"></span>`).join("")}
+              </span>
+              <span class="theme-option-copy">
+                <strong>${theme.label}</strong>
+                <small>${theme.description}</small>
+              </span>
+              <span class="theme-check">${ui.theme === theme.key ? "使用中" : ""}</span>
+            </button>
+          `).join("")}
+        </div>
+        <p class="theme-panel-note">切換後會連同新增／編輯行程、交通等視窗一起套用，不會再跳成白色背景。</p>
+      </div>
+    </section>`;
+}
+
 function renderMore(trip) {
   const groups = [
     {
@@ -1433,6 +1506,7 @@ function renderMore(trip) {
   return `
     <div class="more-view">
       ${topbar({ eyebrow: "More", title: "更多", subtitle: "不常用的工具集中在這裡，首頁與行程維持簡潔。" })}
+      ${renderThemeSelector()}
       ${groups.map((group) => `
         <section class="more-group">
           <div class="home-section-label">${escapeHtml(group.title)}</div>
@@ -1578,6 +1652,7 @@ async function handleAction(event) {
   const id = event.currentTarget.dataset.id;
   const collection = event.currentTarget.dataset.collection;
   const date = event.currentTarget.dataset.date;
+  const themeKey = event.currentTarget.dataset.theme;
 
   const actionMap = {
     "new-trip": () => openTripForm(),
@@ -1623,7 +1698,8 @@ async function handleAction(event) {
     "export-json": () => exportJson(),
     "import-json": () => importJson(),
     "reset-sample": () => resetSample(),
-    "clear-local": () => clearLocal()
+    "clear-local": () => clearLocal(),
+    "set-theme": () => setThemePreference(themeKey)
   };
 
   if (actionMap[action]) await actionMap[action]();
