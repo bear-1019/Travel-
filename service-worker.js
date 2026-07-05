@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v1.3.1-pdf-only";
+const CACHE_NAME = "tripboard-v2.0.0-oat-redesign";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css",
-  "./app.js",
+  "./style.css?v=2.0.0",
+  "./app.js?v=2.0.0",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
@@ -13,29 +13,60 @@ const ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : null))).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : null)))
+      .then(() => self.clients.claim())
   );
 });
+
+async function networkFirst(request, fallback) {
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    if (response && response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return (await caches.match(request)) || (fallback ? await caches.match(fallback) : Response.error());
+  }
+}
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
-  if (new URL(request.url).pathname.endsWith("/google-sync-config.js")) {
+  const url = new URL(request.url);
+
+  if (url.pathname.endsWith("/google-sync-config.js")) {
     event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(networkFirst(request, "./index.html"));
+    return;
+  }
+
+  if (url.origin === self.location.origin && ["script", "style"].includes(request.destination)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      if (response && response.ok && url.origin === self.location.origin) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
       return response;
-    }).catch(() => caches.match("./index.html")))
+    }))
   );
 });

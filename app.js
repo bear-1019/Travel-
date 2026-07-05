@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "1.3.1-pdf-only";
+const APP_VERSION = "2.0.0-oat-redesign";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -14,23 +14,23 @@ function googleScriptUrl() {
 }
 
 const navItems = [
-  { key: "dashboard", label: "首頁", emoji: "🧭" },
-  { key: "itinerary", label: "行程", emoji: "🗓️" },
-  { key: "transport", label: "交通", emoji: "🚇" },
-  { key: "flights", label: "航班", emoji: "✈️" },
-  { key: "stays", label: "住宿", emoji: "🏠" },
-  { key: "packing", label: "行李", emoji: "🧳" },
-  { key: "documents", label: "文件", emoji: "🎟️" },
-  { key: "budget", label: "預算", emoji: "💳" },
-  { key: "todos", label: "待辦", emoji: "✅" },
-  { key: "places", label: "地點庫", emoji: "📍" },
-  { key: "emergency", label: "緊急資訊", emoji: "🆘" },
-  { key: "settings", label: "同步設定", mobileLabel: "同步", emoji: "⚙️" }
+  { key: "dashboard", label: "首頁", emoji: "⌂" },
+  { key: "itinerary", label: "行程", emoji: "▦" },
+  { key: "transport", label: "交通", emoji: "↔" },
+  { key: "flights", label: "航班", emoji: "✈" },
+  { key: "stays", label: "住宿", emoji: "▱" },
+  { key: "packing", label: "行李", emoji: "□" },
+  { key: "documents", label: "文件", emoji: "⌑" },
+  { key: "budget", label: "預算", emoji: "$" },
+  { key: "todos", label: "待辦", emoji: "✓" },
+  { key: "places", label: "地點庫", emoji: "⌖" },
+  { key: "emergency", label: "緊急資訊", emoji: "!" },
+  { key: "settings", label: "同步設定", mobileLabel: "同步", emoji: "⚙" },
+  { key: "more", label: "更多", emoji: "•••" }
 ];
 
-// 手機底部保留 6 個最常用入口：首頁、行程、航班、住宿、文件、同步。
-// 交通仍會穿插在「行程」時間軸裡，桌面版側欄也仍保留交通總覽。
-const mobileNavItems = ["dashboard", "itinerary", "flights", "stays", "documents", "settings"];
+// 簡化手機導覽：常用功能常駐，其餘集中在「更多」。
+const mobileNavItems = ["dashboard", "itinerary", "flights", "stays", "more"];
 
 const collections = [
   "trips", "flights", "stays", "itineraryItems", "transportSegments", "packingItems",
@@ -43,7 +43,8 @@ let ui = {
   filterDate: "all",
   session: null,
   syncStatus: "local",
-  cloudUpdatedAt: null
+  cloudUpdatedAt: null,
+  expandedItineraryIds: new Set()
 };
 
 const app = document.querySelector("#app");
@@ -257,7 +258,7 @@ function saveState(show = true) {
 function render() {
   const trip = activeTrip();
   app.innerHTML = `
-    <div class="app-shell">
+    <div class="app-shell view-${ui.view}">
       ${renderSidebar(trip)}
       <main class="main">
         ${renderView(trip)}
@@ -287,7 +288,7 @@ function renderSidebar(trip) {
         <select class="trip-select" data-action="switch-trip">${tripOptions}</select>
       </div>
       <nav class="nav">
-        ${navItems.map((item) => `
+        ${navItems.filter((item) => item.key !== "more").map((item) => `
           <button type="button" data-view="${item.key}" class="${ui.view === item.key ? "active" : ""}">
             <span class="nav-emoji">${item.emoji}</span><span class="nav-label">${item.label}</span>
           </button>
@@ -302,13 +303,17 @@ function renderSidebar(trip) {
 }
 
 function renderMobileTabs() {
+  const primaryViews = new Set(["dashboard", "itinerary", "flights", "stays"]);
   return `
-    <nav class="mobile-tabs">
-      ${navItems.filter((item) => mobileNavItems.includes(item.key)).map((item) => `
-        <button type="button" data-view="${item.key}" class="${ui.view === item.key ? "active" : ""}">
-          <span>${item.emoji}</span><span>${item.mobileLabel || item.label}</span>
-        </button>
-      `).join("")}
+    <nav class="mobile-tabs" aria-label="主要導覽">
+      ${navItems.filter((item) => mobileNavItems.includes(item.key)).map((item) => {
+        const active = item.key === "more" ? !primaryViews.has(ui.view) : ui.view === item.key;
+        return `
+          <button type="button" data-view="${item.key}" class="${active ? "active" : ""}">
+            <span class="mobile-tab-icon">${item.emoji}</span><span>${item.mobileLabel || item.label}</span>
+          </button>
+        `;
+      }).join("")}
     </nav>
   `;
 }
@@ -327,7 +332,8 @@ function renderView(trip) {
     todos: renderTodos,
     places: renderPlaces,
     emergency: renderEmergency,
-    settings: renderSettings
+    settings: renderSettings,
+    more: renderMore
   };
   return (viewMap[ui.view] || renderDashboard)(trip);
 }
@@ -521,75 +527,104 @@ function renderBudgetOverviewPanel(trip) {
   `;
 }
 
+function renderSimpleProgressRow(label, value, icon) {
+  const pct = clampPercentage(value);
+  return `
+    <div class="simple-progress-row">
+      <span class="simple-progress-icon">${escapeHtml(icon)}</span>
+      <span class="simple-progress-label">${escapeHtml(label)}</span>
+      <div class="progress"><span style="width:${pct}%"></span></div>
+      <strong>${pct}%</strong>
+    </div>`;
+}
+
+function progressRingSvg(percent) {
+  const pct = clampPercentage(percent);
+  const radius = 27;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - pct / 100);
+  return `
+    <div class="budget-ring" aria-label="預算使用 ${pct}%">
+      <svg viewBox="0 0 68 68" role="img">
+        <circle class="budget-ring-track" cx="34" cy="34" r="${radius}"></circle>
+        <circle class="budget-ring-value" cx="34" cy="34" r="${radius}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle>
+      </svg>
+      <strong>${pct}%</strong>
+    </div>`;
+}
+
 function renderDashboard(trip) {
   const tripDays = daysBetween(trip.startDate, trip.endDate);
-  const items = byTrip("itineraryItems");
-  const transports = byTrip("transportSegments");
-  const documents = byTrip("documents");
+  const items = sortByDateTime(byTrip("itineraryItems"));
   const flights = byTrip("flights");
   const stays = byTrip("stays");
-  const todos = byTrip("todos");
-  const packing = byTrip("packingItems");
+  const documents = byTrip("documents");
   const budgetSummary = getBudgetSummary(trip);
-  const doneTodos = todos.filter((t) => t.status === "完成").length;
-  const packed = packing.filter((p) => ["已準備", "已放入行李"].includes(p.status)).length;
-  const nextItem = sortByDateTime(items).find((item) => `${item.date || "9999-99-99"} ${item.startTime || "99:99"}` >= `${todayISO()} 00:00`) || sortByDateTime(items)[0];
-  const nextStay = byTrip("stays").find((stay) => stay.checkOutDate >= todayISO()) || byTrip("stays")[0];
+  const nextItem = items.find((item) => `${item.date || "9999-99-99"} ${item.startTime || "99:99"}` >= `${todayISO()} 00:00`) || items[0];
+  const usagePct = budgetSummary.target > 0 ? Math.min(100, Math.round(budgetSummary.total / budgetSummary.target * 100)) : 0;
+  const itineraryPct = completionValue(trip, "progressItinerary", items.length ? Math.min(100, items.length * 10) : 0);
+  const stayPct = completionValue(trip, "progressStays", stays.length ? 70 : 0);
+  const reservationPct = Math.round((completionValue(trip, "progressFlights", flights.length ? 80 : 0) + completionValue(trip, "progressDocuments", documents.length ? 40 : 0)) / 2);
 
   return `
-    ${topbar({
-      eyebrow: trip.status || "旅程",
-      title: trip.name,
-      subtitle: `${escapeHtml(trip.destination || "未設定目的地")}｜${formatDateLong(trip.startDate)} - ${formatDateLong(trip.endDate)}｜${escapeHtml(trip.travelers || "未設定旅伴")}`,
-      actions: `<button class="btn" data-action="edit-trip" data-id="${trip.id}">編輯旅程</button><button class="btn primary" data-action="new-itinerary">＋ 新增行程</button>`
-    })}
+    <div class="home-dashboard">
+      ${topbar({
+        eyebrow: "TripBoard",
+        title: trip.name,
+        subtitle: `${escapeHtml(trip.destination || "未設定目的地")}｜${formatDateLong(trip.startDate)} - ${formatDateLong(trip.endDate)}`,
+        actions: `<button class="btn" data-action="edit-trip" data-id="${trip.id}">編輯旅程</button><button class="btn primary" data-action="new-itinerary">＋ 新增行程</button>`
+      })}
 
-    <section class="grid four">
-      ${statCard("天數", `${tripDays.length || 0}`, "含出發與回程日")}
-      ${statCard("規劃完成度", `${overallProgress(trip)}%`, "可在編輯旅程中修改")}
-      ${statCard("行程點", `${items.length}`, `${transports.length} 段交通已記錄`)}
-      ${statCard("預算使用", currency(budgetSummary.total, trip.currency || "TWD"), `目標 ${currency(trip.budget, trip.currency || "TWD")}`)}
-    </section>
+      <section class="home-trip-card card">
+        <div class="home-trip-card-main">
+          <div class="home-section-label">目前旅程</div>
+          <select class="home-trip-select" data-action="switch-trip" aria-label="切換旅程">
+            ${state.trips.map((item) => `<option value="${item.id}" ${item.id === state.activeTripId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
+          </select>
+          <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}・${escapeHtml(trip.travelers || "旅伴未填")}</div>
+        </div>
+        <button class="trip-status-pill" data-action="edit-trip" data-id="${trip.id}">${escapeHtml(trip.status || "規劃中")}</button>
+      </section>
 
-    ${renderTripProgressPanel(trip)}
+      <section class="home-section">
+        <div class="home-section-label">下一個重點</div>
+        <div class="card next-focus-card">
+          ${nextItem ? `
+            <div class="next-focus-date">${formatDateLong(nextItem.date)}</div>
+            <div class="next-focus-layout">
+              <div class="next-focus-time">${escapeHtml(nextItem.startTime || "時間未定")}</div>
+              <div class="next-focus-copy">
+                <h2>${escapeHtml(nextItem.title)}</h2>
+                <p>${escapeHtml(nextItem.placeName || nextItem.address || "地點未填")}</p>
+              </div>
+              <button class="round-arrow" data-view="itinerary" aria-label="查看行程">›</button>
+            </div>` : emptyBlock("還沒有行程", "新增第一個景點、餐廳或活動。")}
+        </div>
+      </section>
 
-    ${renderBudgetOverviewPanel(trip)}
+      <section class="home-section">
+        <div class="home-section-label">規劃進度</div>
+        <div class="card simple-progress-card">
+          ${renderSimpleProgressRow("行程", itineraryPct, "≡")}
+          ${renderSimpleProgressRow("住宿", stayPct, "▱")}
+          ${renderSimpleProgressRow("預訂", reservationPct, "⌑")}
+        </div>
+      </section>
 
-    <section class="section grid two">
-      <div class="card">
-        <div class="section-head"><h2>下一個行程</h2><button class="btn small" data-view="itinerary">查看行程</button></div>
-        ${nextItem ? renderItemPreview(nextItem) : emptyBlock("還沒有行程", "新增景點、餐廳、活動或機場資訊。")}
-      </div>
-      <div class="card">
-        <div class="section-head"><h2>今晚住宿</h2><button class="btn small" data-view="stays">住宿</button></div>
-        ${nextStay ? renderStayPreview(nextStay) : emptyBlock("還沒有住宿", "記錄飯店、Airbnb、訂房編號與入住資訊。")}
-      </div>
-    </section>
-
-    <section class="section grid three">
-      <div class="card compact">
-        <div class="stat-label">待辦完成度</div>
-        <div class="stat-value">${todos.length ? Math.round(doneTodos / todos.length * 100) : 0}%</div>
-        <div class="progress"><span style="width:${todos.length ? doneTodos / todos.length * 100 : 0}%"></span></div>
-        <div class="stat-note">${doneTodos}/${todos.length} 已完成</div>
-      </div>
-      <div class="card compact">
-        <div class="stat-label">行李準備度</div>
-        <div class="stat-value">${packing.length ? Math.round(packed / packing.length * 100) : 0}%</div>
-        <div class="progress"><span style="width:${packing.length ? packed / packing.length * 100 : 0}%"></span></div>
-        <div class="stat-note">${packed}/${packing.length} 已準備</div>
-      </div>
-      <div class="card compact">
-        <div class="stat-label">共享同步</div>
-        <div class="stat-value">${hasGoogleSyncConfig() ? "已設定" : "本機"}</div>
-        <div class="stat-note">${hasGoogleSyncConfig() ? "使用 Google Sheets 共享碼同步" : "到同步設定連接共享雲端"}</div>
-      </div>
-    </section>
-
-    <section class="section card">
-      <div class="section-head"><h2>旅程備註</h2></div>
-      <p class="subtitle">${escapeHtml(trip.note || "尚未填寫旅程備註。")}</p>
-    </section>
+      <section class="home-section">
+        <div class="home-section-label">預算概況</div>
+        <div class="card simple-budget-card">
+          <div class="budget-wallet-icon">▣</div>
+          <div class="simple-budget-copy">
+            <span>已規劃與支出</span>
+            <strong>${currency(budgetSummary.total, budgetSummary.currency)}</strong>
+            <small>總預算 ${currency(budgetSummary.target, budgetSummary.currency)}・剩餘 ${currency(budgetSummary.remaining, budgetSummary.currency)}</small>
+          </div>
+          ${progressRingSvg(usagePct)}
+        </div>
+        <button class="text-link-button" data-view="budget">查看預算明細 →</button>
+      </section>
+    </div>
   `;
 }
 
@@ -646,16 +681,18 @@ function renderItinerary(trip) {
   const showDays = ui.filterDate === "all" ? days : [ui.filterDate];
 
   return `
-    ${topbar({
-      eyebrow: "Itinerary",
-      title: "每日行程",
-      subtitle: "用時間軸記錄景點、餐廳、營業時間、門票、預約與備註；點到點交通會直接穿插在每天行程之間。",
-      actions: `<button class="btn" data-action="export-itinerary-pdf">匯出 PDF</button><button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
-    })}
-    <div class="seg-control">${dateButtons}</div>
-    <section class="section timeline">
-      ${showDays.map((day, index) => renderDayTimeline(day, days.indexOf(day) + 1 || index + 1, items.filter((item) => item.date === day), transports.filter((item) => item.date === day))).join("") || emptyBlock("日期尚未設定", "請先編輯旅程的開始與結束日期。")}
-    </section>
+    <div class="itinerary-view">
+      ${topbar({
+        eyebrow: "Itinerary",
+        title: "每日行程",
+        subtitle: "先看時間、地點與重點；需要時再展開完整資訊。",
+        actions: `<button class="btn" data-action="export-itinerary-pdf">匯出 PDF</button><button class="btn" data-action="new-transport">＋ 交通</button><button class="btn primary" data-action="new-itinerary">＋ 行程</button>`
+      })}
+      <div class="seg-control">${dateButtons}</div>
+      <section class="section timeline">
+        ${showDays.map((day, index) => renderDayTimeline(day, days.indexOf(day) + 1 || index + 1, items.filter((item) => item.date === day), transports.filter((item) => item.date === day))).join("") || emptyBlock("日期尚未設定", "請先編輯旅程的開始與結束日期。")}
+      </section>
+    </div>
   `;
 }
 
@@ -682,7 +719,7 @@ function renderDayTimeline(day, dayNo, items, transports) {
       <div class="timeline-body">
         ${blocks.filter((x) => typeof x === "string" && x.trim().startsWith("<")).join("")}
         ${unusedTransports}
-        ${items.length || transports.length ? "" : `<div class="empty"><strong>這一天還沒有安排</strong>新增景點、餐廳、活動或交通。</div>`}
+        ${items.length || transports.length ? "" : `<div class="empty quiet-empty"><strong>這一天還沒有安排</strong>新增景點、餐廳、活動或交通。</div>`}
       </div>
     </article>
   `;
@@ -691,45 +728,55 @@ function renderDayTimeline(day, dayNo, items, transports) {
 function renderTimelineItem(item) {
   const startLabel = escapeHtml(item.startTime || "未定");
   const endLabel = item.endTime ? escapeHtml(item.endTime) : "";
+  const expanded = ui.expandedItineraryIds.has(item.id);
   const timeBlock = endLabel
     ? `<div class="time-range has-end"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div><span class="time-range-line" aria-hidden="true"></span><div class="time-mark end"><strong>${endLabel}</strong><span class="time-dot end-dot" aria-hidden="true"></span></div></div>`
     : `<div class="time-range single"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div></div>`;
 
+  const summaryTags = [
+    item.type ? `<span class="badge dark">${escapeHtml(item.type)}</span>` : "",
+    item.priority ? `<span class="badge">${escapeHtml(item.priority)}</span>` : "",
+    item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
+  ].filter(Boolean).slice(0, 3).join("");
+
   return `
-    <div class="timeline-item">
+    <div class="timeline-item ${expanded ? "is-expanded" : ""}">
       <div class="timeline-time">${timeBlock}</div>
-      <div class="timeline-content">
-        <div class="item-row">
-          <div>
+      <article class="timeline-content simplified-item-card">
+        <div class="item-row simplified-item-head">
+          <div class="simplified-item-copy">
             <div class="item-title">${escapeHtml(item.title)}</div>
             <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
           </div>
-          <div class="item-actions">
+          <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}">${expanded ? "−" : "•••"}</button>
+        </div>
+        ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
+        <div class="itinerary-extra ${expanded ? "open" : ""}">
+          <div class="badges detail-badges">
+            ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
+            ${item.lastEntry ? `<span class="badge">最後入場 ${escapeHtml(item.lastEntry)}</span>` : ""}
+            ${item.budget ? `<span class="badge green">預算 ${currency(item.budget, activeTrip().currency || "TWD")}</span>` : ""}
+            ${item.weatherType ? `<span class="badge">${escapeHtml(item.weatherType)}</span>` : ""}
+          </div>
+          ${renderLinks(item)}
+          ${item.notes ? `<div class="item-meta item-notes">${escapeHtml(item.notes)}</div>` : ""}
+          <div class="expanded-actions">
             <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
             <button class="btn small danger" data-action="delete" data-collection="itineraryItems" data-id="${item.id}">刪除</button>
           </div>
         </div>
-        <div class="badges">
-          <span class="badge dark">${escapeHtml(item.type || "行程")}</span>
-          ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
-          ${item.lastEntry ? `<span class="badge">最後入場 ${escapeHtml(item.lastEntry)}</span>` : ""}
-          ${item.ticketRequired === "是" ? `<span class="badge amber">門票 ${escapeHtml(item.ticketStatus || "待確認")}</span>` : ""}
-          ${item.budget ? `<span class="badge green">預算 ${currency(item.budget, activeTrip().currency || "TWD")}</span>` : ""}
-          ${item.weatherType ? `<span class="badge">${escapeHtml(item.weatherType)}</span>` : ""}
-        </div>
-        ${renderLinks(item)}
-        ${item.notes ? `<div class="item-meta">${escapeHtml(item.notes)}</div>` : ""}
-      </div>
+        <button class="expand-details-button" data-action="toggle-itinerary-details" data-id="${item.id}">${expanded ? "收合資訊" : "展開更多"}<span>${expanded ? "⌃" : "⌄"}</span></button>
+      </article>
     </div>
   `;
 }
 
 function renderTransportInline(item) {
   return `
-    <div class="transport-inline">
+    <div class="transport-inline slim-transport-row">
       <div class="transport-inline-main">
-        <span class="transport-arrow">↓</span>
-        <span><strong>${escapeHtml(item.method || "交通")}</strong> ${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}｜${escapeHtml(item.duration || "時間未填")}｜${currency(item.cost, item.currency || "TWD")}</span>
+        <span class="transport-icon">↔</span>
+        <span><strong>${escapeHtml(item.method || "交通")}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${item.duration ? `・${escapeHtml(item.duration)}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
       </div>
       <div class="transport-inline-actions">
         <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
@@ -1203,6 +1250,45 @@ function renderEmergencyCard(item) {
   `;
 }
 
+function renderMore(trip) {
+  const groups = [
+    {
+      title: "旅程管理",
+      items: [
+        ["transport", "交通總覽", "查看所有點到點交通與備案", "↔"],
+        ["documents", "文件與票券", "整理門票、訂單與保險資訊", "⌑"],
+        ["budget", "預算", "查看自動加總與支出紀錄", "$"],
+        ["packing", "行李", "出發前與回程檢查清單", "□"]
+      ]
+    },
+    {
+      title: "其他工具",
+      items: [
+        ["todos", "待辦事項", "記錄訂票、訂房與出發前任務", "✓"],
+        ["places", "地點庫", "收藏還沒排進日期的地點", "⌖"],
+        ["emergency", "緊急資訊", "保險、聯絡方式與緊急電話", "!"],
+        ["settings", "同步與備份", "Google Sheets、JSON 匯出與本機資料", "⚙"]
+      ]
+    }
+  ];
+  return `
+    <div class="more-view">
+      ${topbar({ eyebrow: "More", title: "更多", subtitle: "不常用的工具集中在這裡，首頁與行程維持簡潔。" })}
+      ${groups.map((group) => `
+        <section class="more-group">
+          <div class="home-section-label">${escapeHtml(group.title)}</div>
+          <div class="card more-menu-card">
+            ${group.items.map(([view, label, description, icon]) => `
+              <button class="more-menu-row" data-view="${view}">
+                <span class="more-menu-icon">${icon}</span>
+                <span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(description)}</small></span>
+                <b>›</b>
+              </button>`).join("")}
+          </div>
+        </section>`).join("")}
+    </div>`;
+}
+
 function renderSettings(trip) {
   const googleConfigured = hasGoogleSyncConfig();
   const supabaseConfigured = hasSupabaseConfig();
@@ -1305,12 +1391,12 @@ function bindGlobalEvents() {
     render();
   }));
 
-  document.querySelector("[data-action='switch-trip']")?.addEventListener("change", (event) => {
+  document.querySelectorAll("[data-action='switch-trip']").forEach((select) => select.addEventListener("change", (event) => {
     state.activeTripId = event.target.value;
     ui.filterDate = "all";
     saveState(false);
     render();
-  });
+  }));
 
   document.querySelectorAll("[data-filter-date]").forEach((button) => button.addEventListener("click", () => {
     ui.filterDate = button.dataset.filterDate;
@@ -1363,6 +1449,11 @@ async function handleAction(event) {
     "google-cloud-metadata": () => refreshGoogleMetadata(true),
     "logout": () => logout(),
     "export-itinerary-pdf": () => exportItineraryPdf(),
+    "toggle-itinerary-details": () => {
+      if (ui.expandedItineraryIds.has(id)) ui.expandedItineraryIds.delete(id);
+      else ui.expandedItineraryIds.add(id);
+      render();
+    },
     "export-json": () => exportJson(),
     "import-json": () => importJson(),
     "reset-sample": () => resetSample(),

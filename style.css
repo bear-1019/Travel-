@@ -1016,3 +1016,359 @@ html, body { width: 100%; overflow-x: hidden; }
   .print-empty { color: #9ca3af; padding: 4mm 2mm; }
   .print-footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #d1d5db; color: #9ca3af; font-size: 8pt; text-align: right; }
 }
+
+/* ========================================================================== 
+   TripBoard 2.0 — Oat Milk Simplified Redesign
+   ========================================================================== */
+@media screen {
+  :root {
+    --bg: #f3eee5;
+    --bg-2: #f3eee5;
+    --surface: #fbf8f2;
+    --surface-solid: #fffdf9;
+    --surface-strong: #f7f1e8;
+    --text: #15213a;
+    --muted: #77766f;
+    --muted-2: #aaa69e;
+    --line: rgba(45, 49, 55, 0.11);
+    --accent: #142342;
+    --accent-2: #142342;
+    --accent-soft: #ebe5da;
+    --green: #3f765f;
+    --red: #9c4747;
+    --blue: #385887;
+    --shadow: 0 8px 26px rgba(48, 42, 34, 0.065);
+    --radius-xl: 22px;
+    --radius-lg: 17px;
+    --radius-md: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  }
+
+  body {
+    background: #f3eee5 !important;
+    background-image: none !important;
+    color: var(--text);
+  }
+
+  h1, h2, h3, .brand-title, .home-trip-name, .day-title, .next-focus-time {
+    font-family: ui-serif, "Iowan Old Style", "Songti TC", "Noto Serif TC", "Times New Roman", serif;
+    letter-spacing: -0.02em;
+  }
+
+  .app-shell { grid-template-columns: 268px minmax(0, 1fr); }
+  .sidebar {
+    background: #f7f1e8;
+    backdrop-filter: none;
+    border-right-color: rgba(45,49,55,.08);
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .logo {
+    background: #142342;
+    box-shadow: none;
+    border-radius: 14px;
+    letter-spacing: -0.04em;
+  }
+  .brand { padding-inline: 5px; }
+  .brand-title { color: var(--accent); font-size: 1.28rem; font-weight: 700; }
+  .brand-subtitle { color: #88847d; }
+  .trip-switcher {
+    background: #fffdf9;
+    border-color: rgba(45,49,55,.1);
+    box-shadow: none;
+    padding: 13px;
+  }
+  select, input, textarea {
+    background: #fffdf9;
+    border-color: rgba(45,49,55,.13);
+    box-shadow: none;
+  }
+  select:focus, input:focus, textarea:focus {
+    border-color: rgba(20,35,66,.42);
+    box-shadow: 0 0 0 3px rgba(20,35,66,.08);
+  }
+  .nav button { border-radius: 12px; padding: 10px 11px; }
+  .nav button:hover { background: #eee8df; }
+  .nav button.active { background: #142342; color: #fff; box-shadow: none; }
+  .nav-emoji { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 800; }
+
+  .main { max-width: 1120px; padding-top: calc(30px + var(--safe-top)); }
+  .topbar { margin-bottom: 18px; align-items: center; }
+  .eyebrow { color: #88735c; letter-spacing: .16em; font-size: .69rem; }
+  h1 { font-size: clamp(2.1rem, 4.4vw, 3.45rem); line-height: 1.04; font-weight: 700; }
+  h2 { font-size: 1.32rem; font-weight: 700; }
+  h3 { font-weight: 700; }
+  .subtitle { color: var(--muted); max-width: 680px; line-height: 1.6; }
+
+  .btn {
+    background: #fffdf9;
+    border-color: rgba(45,49,55,.12);
+    box-shadow: none;
+    color: var(--accent);
+    font-weight: 700;
+    padding: 10px 15px;
+  }
+  .btn:hover { box-shadow: none; background: #f4eee5; transform: none; }
+  .btn.primary { background: #142342; border-color: #142342; color: #fff; }
+  .btn.danger { color: var(--red); }
+
+  .card {
+    background: #fffdf9;
+    border-color: rgba(45,49,55,.10);
+    box-shadow: var(--shadow);
+    border-radius: 22px;
+  }
+  .card::before { display: none; }
+  .item { background: #fffdf9; border-color: rgba(45,49,55,.10); border-radius: 17px; }
+  .empty { background: #faf6ef; border-color: rgba(45,49,55,.14); border-radius: 18px; }
+  .quiet-empty { padding: 24px 16px; }
+
+  .badge {
+    background: #f0ece5;
+    color: #6d6c67;
+    padding: 5px 9px;
+    font-weight: 700;
+  }
+  .badge.dark { background: #142342; color: #fff; }
+  .badge.amber { background: #f3e7dc; color: #87573d; }
+  .badge.green { background: #e5f0ea; color: #3f765f; }
+  .badge.blue { background: #e7ecf5; color: #385887; }
+  .badge.red { background: #f4e7e5; color: #9c4747; }
+
+  .progress { height: 6px; background: #e8e1d7; }
+  .progress > span { background: #142342; }
+
+  /* Home */
+  .home-dashboard { max-width: 760px; margin: 0 auto; }
+  .home-dashboard .topbar { margin-bottom: 18px; }
+  .home-section { margin-top: 24px; }
+  .home-section-label {
+    margin: 0 0 9px 3px;
+    color: #142342;
+    font-family: ui-serif, "Iowan Old Style", "Songti TC", "Noto Serif TC", serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+  }
+  .home-trip-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 19px 20px;
+  }
+  .home-trip-name { font-size: 1.42rem; font-weight: 700; margin: 3px 0 5px; }
+  .home-trip-meta { color: var(--muted); font-size: .88rem; }
+  .trip-status-pill { background: #eee7dd; color: #6e655a; border-radius: 999px; padding: 7px 10px; font-size: .75rem; font-weight: 800; white-space: nowrap; }
+  .next-focus-card { padding: 20px; }
+  .next-focus-date { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
+  .next-focus-layout { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 18px; }
+  .next-focus-time { color: #142342; font-size: 2.35rem; line-height: 1; font-weight: 700; }
+  .next-focus-copy h2 { margin: 0 0 5px; }
+  .next-focus-copy p { color: var(--muted); margin: 0; }
+  .round-arrow { width: 38px; height: 38px; border: 0; border-radius: 50%; background: #142342; color: #fff; font-size: 1.5rem; line-height: 1; }
+  .simple-progress-card { padding: 10px 18px; }
+  .simple-progress-row { display: grid; grid-template-columns: 34px 56px minmax(100px,1fr) 42px; align-items: center; gap: 10px; min-height: 54px; border-bottom: 1px solid rgba(45,49,55,.08); }
+  .simple-progress-row:last-child { border-bottom: 0; }
+  .simple-progress-icon { width: 30px; height: 30px; border-radius: 50%; background: #142342; color: #fff; display: grid; place-items: center; font-size: .85rem; font-weight: 800; }
+  .simple-progress-label { font-weight: 760; }
+  .simple-progress-row strong { text-align: right; font-size: .82rem; }
+  .simple-budget-card { display: grid; grid-template-columns: 44px minmax(0,1fr) 72px; align-items: center; gap: 14px; padding: 18px 20px; }
+  .budget-wallet-icon { width: 42px; height: 42px; border-radius: 50%; background: #eee7dd; display: grid; place-items: center; color: #142342; font-weight: 900; }
+  .simple-budget-copy { display: grid; gap: 2px; }
+  .simple-budget-copy span, .simple-budget-copy small { color: var(--muted); }
+  .simple-budget-copy strong { color: #142342; font-family: ui-serif, "Iowan Old Style", serif; font-size: 1.55rem; }
+  .budget-ring { position: relative; width: 68px; height: 68px; }
+  .budget-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .budget-ring circle { fill: none; stroke-width: 6; }
+  .budget-ring-track { stroke: #e7e0d6; }
+  .budget-ring-value { stroke: #142342; stroke-linecap: round; }
+  .budget-ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: .8rem; }
+  .text-link-button { display: block; margin: 9px 3px 0 auto; padding: 4px; border: 0; background: transparent; color: #6d6c67; font-weight: 700; }
+
+  /* Itinerary */
+  .itinerary-view { max-width: 870px; margin: 0 auto; }
+  .seg-control { background: #ebe5dc; border-color: transparent; box-shadow: none; }
+  .seg-control button { color: #807d77; }
+  .seg-control button.active { background: #fffdf9; color: #142342; box-shadow: none; }
+  .timeline { gap: 17px; }
+  .day-card { box-shadow: none; border-color: rgba(45,49,55,.09); background: #f8f3eb; }
+  .day-head { padding: 18px 20px 14px; }
+  .day-title { color: #142342; font-size: 1.18rem; }
+  .day-date { color: #85817b; }
+  .timeline-body { padding: 0 20px 20px; gap: 10px; }
+  .timeline-item { grid-template-columns: 84px minmax(0,1fr); gap: 14px; }
+  .timeline-time { padding-top: 12px; padding-bottom: 12px; }
+  .time-mark strong { color: #142342; font-size: .82rem; font-family: ui-serif, "Iowan Old Style", serif; }
+  .start-dot { background: #142342; box-shadow: 0 0 0 3px #f8f3eb; }
+  .end-dot { background: #f8f3eb; border-color: #a49d92; box-shadow: 0 0 0 2px #f8f3eb; }
+  .time-range-line { background: #c9c1b6; }
+  .timeline-content { background: #fffdf9; border-color: rgba(45,49,55,.1); border-radius: 18px; padding: 15px 16px 12px; box-shadow: none; }
+  .simplified-item-head { align-items: center; }
+  .simplified-item-copy { min-width: 0; }
+  .item-title { color: #142342; font-family: ui-serif, "Iowan Old Style", "Songti TC", serif; font-size: 1.08rem; font-weight: 700; }
+  .item-meta { color: #7b7973; }
+  .summary-badges { margin-top: 10px; }
+  .more-dot-button { border: 0; background: transparent; color: #6e6b65; padding: 5px 2px 8px 12px; font-weight: 900; letter-spacing: .08em; }
+  .itinerary-extra { display: none; margin-top: 10px; padding-top: 11px; border-top: 1px solid rgba(45,49,55,.08); }
+  .itinerary-extra.open { display: block; }
+  .detail-badges { margin-bottom: 9px; }
+  .item-notes { margin-top: 9px; white-space: pre-wrap; }
+  .expanded-actions { display: flex; gap: 7px; justify-content: flex-end; margin-top: 12px; }
+  .expand-details-button { width: 100%; border: 0; background: transparent; color: #77736c; padding: 11px 2px 1px; display: flex; align-items: center; justify-content: flex-end; gap: 5px; font-size: .76rem; font-weight: 700; }
+  .slim-transport-row { margin-left: 98px; background: transparent; border-radius: 0; padding: 10px 0; border-top: 1px solid #d8d0c5; border-bottom: 1px solid #d8d0c5; align-items: center; }
+  .transport-inline-main { color: #696862; }
+  .transport-inline-main > span:last-child { display: grid; gap: 2px; }
+  .transport-inline-main small { color: #8b877f; font-size: .77rem; }
+  .transport-icon { width: 24px; height: 24px; display: grid; place-items: center; color: #817b72; }
+  .mini-link { background: transparent; border: 0; padding: 4px 5px; color: #77736c; }
+
+  /* More */
+  .more-view { max-width: 760px; margin: 0 auto; }
+  .more-group { margin-top: 22px; }
+  .more-menu-card { padding: 4px 16px; }
+  .more-menu-row { width: 100%; border: 0; background: transparent; display: grid; grid-template-columns: 40px minmax(0,1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 14px 0; border-bottom: 1px solid rgba(45,49,55,.08); color: var(--text); }
+  .more-menu-row:last-child { border-bottom: 0; }
+  .more-menu-row > span:nth-child(2) { display: grid; gap: 3px; }
+  .more-menu-row strong { color: #142342; }
+  .more-menu-row small { color: var(--muted); }
+  .more-menu-row b { font-size: 1.35rem; color: #9b978f; font-weight: 400; }
+  .more-menu-icon { width: 36px; height: 36px; border-radius: 50%; background: #eee7dd; display: grid; place-items: center; color: #142342; font-weight: 850; }
+
+  /* Keep all secondary views visually quieter. */
+  .list > .item, .grid > .card { box-shadow: 0 5px 18px rgba(48,42,34,.045); }
+  .section-head { margin-bottom: 14px; }
+  .stat-value { color: #142342; font-family: ui-serif, "Iowan Old Style", serif; }
+}
+
+@media screen and (max-width: 960px) {
+  body { background: #f3eee5 !important; background-image: none !important; }
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    padding: calc(12px + var(--safe-top)) 16px 10px;
+    background: #f3eee5;
+    border-bottom: 0;
+    gap: 8px;
+  }
+  .brand { padding: 2px 3px 8px; }
+  .brand-subtitle { display: none; }
+  .logo { width: 42px; height: 42px; }
+  .trip-switcher { padding: 10px 11px; border-radius: 16px; }
+  .trip-label { font-size: .7rem; margin-bottom: 6px; }
+  .trip-select { padding: 10px 11px; }
+  .main { padding: 12px 16px calc(92px + var(--safe-bottom)); }
+  .topbar { gap: 10px; margin-bottom: 14px; }
+  .topbar .actions { gap: 7px; }
+  .topbar .actions .btn { padding: 8px 11px; font-size: .78rem; }
+  h1 { font-size: 2.15rem; }
+  .subtitle { font-size: .85rem; margin-top: 7px; }
+
+  .home-dashboard .topbar .eyebrow { display: none; }
+  .home-dashboard .topbar h1 { font-size: 2rem; }
+  .home-dashboard .topbar .subtitle { font-size: .78rem; }
+  .home-dashboard .topbar .actions { display: none; }
+  .home-trip-card { padding: 16px; }
+  .home-trip-name { font-size: 1.25rem; }
+  .home-trip-meta { line-height: 1.45; }
+  .home-section { margin-top: 20px; }
+  .next-focus-card { padding: 17px; }
+  .next-focus-layout { grid-template-columns: auto minmax(0,1fr) 34px; gap: 13px; }
+  .next-focus-time { font-size: 2rem; }
+  .next-focus-copy h2 { font-size: 1.08rem; }
+  .next-focus-copy p { font-size: .8rem; }
+  .round-arrow { width: 34px; height: 34px; }
+  .simple-progress-card { padding: 7px 14px; }
+  .simple-progress-row { grid-template-columns: 30px 48px minmax(70px,1fr) 38px; gap: 8px; min-height: 50px; }
+  .simple-progress-icon { width: 28px; height: 28px; }
+  .simple-budget-card { grid-template-columns: 40px minmax(0,1fr) 62px; gap: 11px; padding: 16px; }
+  .budget-wallet-icon { width: 38px; height: 38px; }
+  .simple-budget-copy strong { font-size: 1.35rem; }
+  .simple-budget-copy small { font-size: .7rem; }
+  .budget-ring { width: 62px; height: 62px; }
+
+  .itinerary-view .topbar { text-align: center; align-items: stretch; }
+  .itinerary-view .topbar .eyebrow { display: none; }
+  .itinerary-view .topbar .subtitle { display: none; }
+  .itinerary-view .topbar .actions { justify-content: center; overflow-x: auto; flex-wrap: nowrap; }
+  .itinerary-view .topbar .actions .btn { flex: 0 0 auto; }
+  .seg-control { margin-bottom: 14px; }
+  .day-card { border-radius: 20px; }
+  .day-head { padding: 16px 15px 12px; }
+  .day-actions .btn { padding: 7px 10px; }
+  .timeline-body { padding: 0 14px 15px; }
+  .timeline-item { grid-template-columns: 68px minmax(0,1fr); gap: 8px; }
+  .time-mark strong { font-size: .75rem; }
+  .timeline-content { padding: 13px 13px 10px; }
+  .item-title { font-size: 1rem; }
+  .summary-badges { margin-top: 8px; }
+  .badge { font-size: .69rem; padding: 4px 8px; }
+  .slim-transport-row { margin-left: 76px; padding: 8px 0; }
+  .transport-inline-actions { flex-direction: row; }
+
+  .mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0,1fr));
+    left: 14px;
+    right: 14px;
+    bottom: calc(10px + var(--safe-bottom));
+    padding: 6px 8px;
+    gap: 3px;
+    border-radius: 20px;
+    background: rgba(255,253,249,.96);
+    border-color: rgba(45,49,55,.1);
+    box-shadow: 0 10px 30px rgba(48,42,34,.12);
+    backdrop-filter: blur(12px);
+  }
+  .mobile-tabs button {
+    min-width: 0;
+    width: 100%;
+    padding: 7px 2px 6px;
+    border-radius: 14px;
+    font-size: .63rem;
+    color: #8b877f;
+  }
+  .mobile-tabs button.active { background: transparent; color: #142342; }
+  .mobile-tabs button.active::after { content: ""; width: 18px; height: 2px; border-radius: 99px; background: #142342; margin-top: 2px; }
+  .mobile-tab-icon { font-size: 1.08rem !important; height: 17px; display: grid; place-items: center; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .more-menu-card { padding-inline: 15px; }
+  .more-view .topbar .actions { display: none; }
+}
+
+@media screen and (max-width: 430px) {
+  .main { padding-left: 12px; padding-right: 12px; }
+  .sidebar { padding-left: 12px; padding-right: 12px; }
+  .next-focus-layout { gap: 10px; }
+  .next-focus-time { font-size: 1.75rem; }
+  .simple-progress-row { grid-template-columns: 28px 43px minmax(55px,1fr) 34px; font-size: .8rem; }
+  .timeline-item { grid-template-columns: 62px minmax(0,1fr); gap: 7px; }
+  .slim-transport-row { margin-left: 69px; }
+  .day-actions { gap: 5px; }
+  .day-actions .btn { font-size: .72rem; padding: 7px 9px; }
+}
+
+@media screen {
+  .home-trip-card-main { min-width: 0; flex: 1; }
+  .home-trip-select {
+    width: 100%;
+    max-width: 440px;
+    padding: 2px 30px 3px 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    color: #142342;
+    font-family: ui-serif, "Iowan Old Style", "Songti TC", "Noto Serif TC", serif;
+    font-size: 1.42rem;
+    font-weight: 700;
+    box-shadow: none;
+  }
+  .home-trip-select:focus { box-shadow: none; border: 0; }
+  button.trip-status-pill { border: 0; cursor: pointer; }
+}
+
+@media screen and (max-width: 960px) {
+  .view-dashboard .sidebar .trip-switcher { display: none; }
+  .view-dashboard .sidebar { padding-bottom: 2px; }
+  .home-trip-select { font-size: 1.25rem; }
+}
+@media screen and (max-width: 960px) {
+  .home-dashboard .topbar { display: none; }
+}
