@@ -3312,53 +3312,43 @@ body[data-theme="coffee"] {
   padding: 12px 14px;
   border-top: 1px solid var(--theme-line, var(--line));
   border-bottom: 1px solid var(--theme-line, var(--line));
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
   color: var(--theme-text, var(--text));
 }
 
-.daily-routine-label {
-  color: var(--theme-muted, var(--muted));
-  font-size: .76rem;
-  font-weight: 800;
-  letter-spacing: .1em;
-  white-space: nowrap;
-}
-
-.daily-routine-times {
+.daily-routine-inline {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
   min-width: 0;
-  gap: 15px;
+  flex: 1 1 auto;
 }
 
-.daily-routine-time {
+.daily-routine-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  color: var(--theme-text-strong, var(--text));
+  white-space: nowrap;
 }
 
-.daily-routine-time > span {
-  display: grid;
-  gap: 1px;
-}
-
-.daily-routine-time small {
+.daily-routine-chip-label {
   color: var(--theme-muted, var(--muted));
-  font-size: .7rem;
-  line-height: 1;
+  font-size: .88rem;
+  font-weight: 700;
 }
 
-.daily-routine-time strong {
+.daily-routine-chip strong {
   color: var(--theme-text-strong, var(--text));
   font-family: "Noto Serif TC", "Songti TC", "STFangsong", serif;
   font-size: 1rem;
   line-height: 1.1;
-  white-space: nowrap;
 }
 
 .daily-routine-icon {
@@ -3368,10 +3358,10 @@ body[data-theme="coffee"] {
   flex: 0 0 auto;
 }
 
-.daily-routine-divider {
-  width: 1px;
-  height: 30px;
-  background: var(--theme-line, var(--line));
+.daily-routine-separator {
+  color: var(--theme-muted, var(--muted));
+  font-size: .95rem;
+  line-height: 1;
 }
 
 .daily-routine-edit {
@@ -3380,13 +3370,14 @@ body[data-theme="coffee"] {
   color: var(--theme-text-strong, var(--text));
   font-weight: 800;
   padding: 8px 4px;
+  flex: 0 0 auto;
 }
 
 .daily-routine-edit::after {
   content: " ›";
 }
 
-.daily-routine-strip.is-empty .daily-routine-times {
+.daily-routine-strip.is-empty .daily-routine-inline {
   opacity: .68;
 }
 
@@ -3403,25 +3394,22 @@ body[data-theme="coffee"] {
   }
 
   .daily-routine-strip {
-    grid-template-columns: 1fr auto;
-    gap: 10px 12px;
     padding: 12px 4px;
+    align-items: flex-start;
+    gap: 10px;
   }
 
-  .daily-routine-label {
-    grid-column: 1 / -1;
-  }
-
-  .daily-routine-times {
+  .daily-routine-inline {
     justify-content: flex-start;
-    gap: 11px;
+    gap: 8px;
   }
 
-  .daily-routine-time {
+  .daily-routine-chip {
     gap: 6px;
   }
 
-  .daily-routine-time strong {
+  .daily-routine-chip-label,
+  .daily-routine-chip strong {
     font-size: .94rem;
   }
 }

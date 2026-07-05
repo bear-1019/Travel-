@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.11.0-countdown-quickadd-routine";
+const APP_VERSION = "2.11.1-countdown-quickadd-routine-inline";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1066,11 +1066,10 @@ function renderDailyRoutineStrip(date, routine) {
   const hasTimes = routine?.wakeTime || routine?.leaveTime;
   return `
     <section class="daily-routine-strip ${hasTimes ? "has-routine" : "is-empty"}" aria-label="每日作息">
-      <div class="daily-routine-label">每日作息</div>
-      <div class="daily-routine-times">
-        <span class="daily-routine-time">${iconSvg("sunrise", "daily-routine-icon")}<span><small>起床</small><strong>${escapeHtml(routine?.wakeTime || "未設定")}</strong></span></span>
-        <span class="daily-routine-divider" aria-hidden="true"></span>
-        <span class="daily-routine-time">${iconSvg("door", "daily-routine-icon")}<span><small>出門</small><strong>${escapeHtml(routine?.leaveTime || "未設定")}</strong></span></span>
+      <div class="daily-routine-inline" role="group" aria-label="每日作息資訊">
+        <span class="daily-routine-chip">${iconSvg("sunrise", "daily-routine-icon")}<span class="daily-routine-chip-label">起床</span><strong>${escapeHtml(routine?.wakeTime || "未設定")}</strong></span>
+        <span class="daily-routine-separator" aria-hidden="true">｜</span>
+        <span class="daily-routine-chip">${iconSvg("door", "daily-routine-icon")}<span class="daily-routine-chip-label">出門</span><strong>${escapeHtml(routine?.leaveTime || "未設定")}</strong></span>
       </div>
       <button class="daily-routine-edit" data-action="edit-daily-routine" data-date="${escapeHtml(date || "")}">${hasTimes ? "編輯" : "設定"}</button>
     </section>
