@@ -1840,3 +1840,137 @@ h1, h2, h3,
   .itinerary-type-orb { width: 40px; height: 40px; }
   .itinerary-type-icon-svg { width: 20px; height: 20px; }
 }
+
+/* =========================================================
+   TripBoard 2.2 — typography, compact inner pages, date picker
+   ========================================================= */
+:root {
+  --display-serif: "Noto Serif TC", "Songti TC", "STSong", "PMingLiU", serif;
+  --number-serif: "Cormorant Garamond", "Times New Roman", serif;
+}
+
+/* Keep the visual language to one Chinese serif + one UI sans family. */
+.home-section-label,
+.home-trip-select,
+.home-trip-date,
+.simple-progress-label,
+.text-link-button,
+.trip-status-pill,
+.more-group .home-section-label,
+.topbar h1,
+.topbar h2,
+.topbar h3 {
+  font-family: var(--display-serif);
+}
+
+/* Numerals use the elegant old-style serif from the concept image. */
+.next-focus-time,
+.next-focus-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.day-date,
+.home-trip-date {
+  font-family: var(--number-serif), var(--display-serif);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.home-trip-select {
+  font-weight: 650;
+  letter-spacing: .015em;
+}
+.home-trip-date {
+  margin-top: 7px;
+  color: var(--navy-muted);
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .025em;
+}
+.home-trip-meta { margin-top: 3px; }
+.simple-progress-label,
+.text-link-button { font-weight: 650; letter-spacing: .025em; }
+.trip-status-pill { font-weight: 650; }
+.simple-progress-icon { overflow: visible; }
+.simple-progress-svg { width: 16px; height: 16px; stroke-width: 1.75; }
+
+/* The calendar is a real native date picker while retaining the mockup icon. */
+.itinerary-calendar-button {
+  position: relative;
+  border-radius: 50%;
+  cursor: pointer;
+  overflow: hidden;
+}
+.itinerary-calendar-button:active { background: rgba(21,39,70,.06); }
+.native-date-picker {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Make every bottom icon fit safely inside its box. */
+.mobile-tabs,
+.mobile-tabs button,
+.mobile-tab-icon,
+.mobile-nav-icon-svg {
+  overflow: visible;
+}
+.mobile-tab-icon {
+  padding: 1px;
+}
+.mobile-nav-icon-svg {
+  width: 21px;
+  height: 21px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media screen and (max-width: 960px) {
+  /* Inner pages use their own page header. Hiding the desktop sidebar removes
+     the large unexplained gap above Flights, Stays, and every More subpage. */
+  .app-shell:not(.view-dashboard) .sidebar {
+    display: none !important;
+    min-height: 0 !important;
+  }
+  .app-shell:not(.view-dashboard) .main {
+    padding-top: calc(10px + var(--safe-top));
+  }
+  .app-shell:not(.view-dashboard) .topbar {
+    margin-top: 0;
+  }
+  .view-flights .main,
+  .view-stays .main,
+  .view-transport .main,
+  .view-packing .main,
+  .view-documents .main,
+  .view-budget .main,
+  .view-todos .main,
+  .view-places .main,
+  .view-emergency .main,
+  .view-settings .main,
+  .view-more .main {
+    padding-top: calc(12px + var(--safe-top));
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .focused-date-label strong {
+    font-size: .84rem;
+    letter-spacing: .025em;
+  }
+  .home-trip-date { font-size: .82rem; }
+  .mobile-tab-icon { width: 23px; height: 23px !important; }
+  .mobile-nav-icon-svg { width: 20px; height: 20px; }
+}

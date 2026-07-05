@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.1.0-mockup-match";
+const APP_VERSION = "2.2.0-polish";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -18,7 +18,7 @@ function iconSvg(name, className = "app-icon") {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
     route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
-    plane: '<path d="m2 16 20-8-8 20-2-8-8-2Z"/><path d="m12 20 3-3M4 18l6-6"/>',
+    plane: '<path d="M10.8 20v-5.4L3 9.6V7.5l7.8 2.7V5.2C10.8 4 11.3 3 12 3s1.2 1 1.2 2.2v5l7.8-2.7v2.1l-7.8 5V20l2.7 1.8v1.1L12 22l-3.9.9v-1.1L10.8 20Z" fill="currentColor" stroke="none"/>',
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
     luggage: '<rect x="6" y="6" width="12" height="15" rx="2"/><path d="M9 6V4h6v2M9 10v7M15 10v7M4 21h16"/>',
     ticket: '<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 6v12"/>',
@@ -139,10 +139,18 @@ function formatFocusedDate(value) {
   if (!value) return "日期未設定";
   const date = new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
+  const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
   const weekday = new Intl.DateTimeFormat("zh-TW", { weekday: "short" }).format(date);
-  return `${month}月${day}日（${weekday}）`;
+  return `${year}年${month}月${day}日（${weekday}）`;
+}
+
+function formatDateYmd(value) {
+  if (!value) return "日期未設定";
+  const parts = String(value).split("-");
+  if (parts.length !== 3) return value;
+  return `${parts[0]}/${parts[1]}/${parts[2]}`;
 }
 
 function addMinutesToTime(time, minutes) {
@@ -605,7 +613,7 @@ function renderSimpleProgressRow(label, value, icon) {
   const pct = clampPercentage(value);
   return `
     <div class="simple-progress-row">
-      <span class="simple-progress-icon">${escapeHtml(icon)}</span>
+      <span class="simple-progress-icon">${iconSvg(icon, "simple-progress-svg")}</span>
       <span class="simple-progress-label">${escapeHtml(label)}</span>
       <div class="progress"><span style="width:${pct}%"></span></div>
       <strong>${pct}%</strong>
@@ -655,6 +663,7 @@ function renderDashboard(trip) {
           <select class="home-trip-select" data-action="switch-trip" aria-label="切換旅程">
             ${state.trips.map((item) => `<option value="${item.id}" ${item.id === state.activeTripId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
           </select>
+          <div class="home-trip-date">${formatDateYmd(trip.startDate)} – ${formatDateYmd(trip.endDate)}</div>
           <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}・${escapeHtml(trip.travelers || "旅伴未填")}</div>
         </div>
         <button class="trip-status-pill" data-action="edit-trip" data-id="${trip.id}">${escapeHtml(trip.status || "規劃中")}</button>
@@ -679,9 +688,9 @@ function renderDashboard(trip) {
       <section class="home-section">
         <div class="home-section-label">規劃進度</div>
         <div class="card simple-progress-card">
-          ${renderSimpleProgressRow("行程", itineraryPct, "≡")}
-          ${renderSimpleProgressRow("住宿", stayPct, "▱")}
-          ${renderSimpleProgressRow("預訂", reservationPct, "⌑")}
+          ${renderSimpleProgressRow("行程", itineraryPct, "calendar")}
+          ${renderSimpleProgressRow("住宿", stayPct, "bed")}
+          ${renderSimpleProgressRow("預訂", reservationPct, "ticket")}
         </div>
       </section>
 
@@ -763,7 +772,10 @@ function renderItinerary(trip) {
       <header class="itinerary-screen-header">
         <button class="icon-button itinerary-back" data-view="dashboard" aria-label="返回首頁">${iconSvg("chevronLeft", "header-icon-svg")}</button>
         <h1>每日行程</h1>
-        <span class="itinerary-calendar-icon" aria-hidden="true">${iconSvg("calendar", "header-icon-svg")}</span>
+        <label class="itinerary-calendar-icon itinerary-calendar-button" aria-label="選擇行程日期" title="選擇日期">
+          ${iconSvg("calendar", "header-icon-svg")}
+          <input class="native-date-picker" type="date" data-itinerary-date-picker min="${escapeHtml(trip.startDate || "")}" max="${escapeHtml(trip.endDate || "")}" value="${escapeHtml(focusedDate || "")}" />
+        </label>
       </header>
 
       <div class="focused-date-navigator" aria-label="切換日期">
@@ -1538,6 +1550,13 @@ function bindGlobalEvents() {
 
   document.querySelectorAll("[data-filter-date]").forEach((button) => button.addEventListener("click", () => {
     ui.filterDate = button.dataset.filterDate;
+    render();
+  }));
+
+  document.querySelectorAll("[data-itinerary-date-picker]").forEach((input) => input.addEventListener("change", (event) => {
+    const selectedDate = event.target.value;
+    if (!selectedDate) return;
+    ui.filterDate = selectedDate;
     render();
   }));
 
