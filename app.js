@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.7.9-transport-duration";
+const APP_VERSION = "2.8.0-flight-itinerary";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -260,6 +260,7 @@ function transportDurationLabel(item) {
 }
 
 function inferTransportEndTime(item) {
+  if (item?.endTime) return String(item.endTime).slice(0, 5);
   const totalMinutes = getTransportDurationMinutes(item);
   if (!totalMinutes) return "";
   return addMinutesToTime(item.startTime, totalMinutes);
@@ -339,6 +340,82 @@ function loadState() {
   }
 }
 
+function splitLocalDateTime(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+  return match ? { date: match[1], time: match[2] } : { date: "", time: "" };
+}
+
+function flightTransportPayload(targetState, flight) {
+  const departure = splitLocalDateTime(flight.departure);
+  const arrival = splitLocalDateTime(flight.arrival);
+  const trip = targetState.trips.find((item) => item.id === flight.tripId);
+  const airlineAndNumber = [flight.airline, flight.flightNumber].filter(Boolean).join(" ").trim();
+  const bookingText = flight.bookingRef ? `PNR ${flight.bookingRef}` : "";
+  const arrivalText = arrival.date && arrival.time ? `抵達 ${formatDateYmd(arrival.date)} ${arrival.time}` : "";
+
+  return {
+    tripId: flight.tripId,
+    sourceType: "flight",
+    sourceFlightId: flight.id,
+    date: departure.date,
+    startTime: departure.time,
+    endTime: arrival.time,
+    arrivalDate: arrival.date,
+    fromName: flight.fromAirport || "出發機場",
+    toName: flight.toAirport || "抵達機場",
+    method: "飛機",
+    duration: "",
+    durationHours: 0,
+    durationMinutes: 0,
+    durationTotalMinutes: 0,
+    cost: 0,
+    currency: trip?.currency || "TWD",
+    route: airlineAndNumber,
+    departStation: flight.fromAirport || "",
+    arrivalStation: flight.toAirport || "",
+    transferInfo: arrivalText,
+    luggageFriendly: "高",
+    bookingStatus: flight.bookingRef ? "已訂位" : "需訂位",
+    ticketInfo: bookingText,
+    mapUrl: "",
+    backup: "",
+    notes: "由航班資料自動加入每日行程；請在航班頁編輯。"
+  };
+}
+
+function syncFlightTransportInState(targetState, flight) {
+  if (!flight?.id) return;
+  const linked = targetState.transportSegments.filter((item) => item.sourceType === "flight" && item.sourceFlightId === flight.id);
+  const shouldSync = flight.syncToItinerary !== false;
+  const departure = splitLocalDateTime(flight.departure);
+
+  if (!shouldSync || !departure.date) {
+    targetState.transportSegments = targetState.transportSegments.filter((item) => !(item.sourceType === "flight" && item.sourceFlightId === flight.id));
+    return;
+  }
+
+  const payload = flightTransportPayload(targetState, flight);
+  if (linked.length) {
+    Object.assign(linked[0], payload);
+    if (linked.length > 1) {
+      const keepId = linked[0].id;
+      targetState.transportSegments = targetState.transportSegments.filter((item) => !(item.sourceType === "flight" && item.sourceFlightId === flight.id && item.id !== keepId));
+    }
+  } else {
+    targetState.transportSegments.push({ id: uid("transport"), ...payload });
+  }
+}
+
+function syncAllFlightTransportsInState(targetState) {
+  const validFlightIds = new Set(targetState.flights.map((flight) => flight.id));
+  targetState.transportSegments = targetState.transportSegments.filter((item) => item.sourceType !== "flight" || validFlightIds.has(item.sourceFlightId));
+  for (const flight of targetState.flights) {
+    if (flight.syncToItinerary === undefined) flight.syncToItinerary = true;
+    syncFlightTransportInState(targetState, flight);
+  }
+}
+
 function normalizeState(input) {
   const base = createEmptyState();
   const next = { ...base, ...input };
@@ -346,6 +423,7 @@ function normalizeState(input) {
     if (!Array.isArray(next[key])) next[key] = [];
   }
   if (!next.activeTripId && next.trips.length) next.activeTripId = next.trips[0].id;
+  syncAllFlightTransportsInState(next);
   return next;
 }
 
@@ -393,7 +471,7 @@ function createSeedState() {
       note: "這是一筆範例資料。你可以直接編輯、刪除，或建立自己的旅程。"
     }],
     flights: [{
-      id: uid("flight"), tripId, type: "去程", airline: "Emirates", flightNumber: "EK367 / EK073",
+      id: uid("flight"), tripId, type: "去程", airline: "Emirates", flightNumber: "EK367 / EK073", syncToItinerary: true,
       bookingRef: "待填", fromAirport: "TPE 台北桃園", toAirport: "CDG 巴黎戴高樂",
       departure: "2026-12-23T00:30", arrival: "2026-12-23T12:25", terminal: "待確認", gate: "待確認",
       seat: "待選位", cabin: "Economy", checkedBaggage: "30kg", carryOn: "7kg", price: 40000, notes: "確認轉機時間、線上報到與行李規定。"
@@ -1019,6 +1097,13 @@ function renderTimelineItem(item) {
 function renderTransportInline(item) {
   const startLabel = escapeHtml(item.startTime || "");
   const endLabel = escapeHtml(inferTransportEndTime(item));
+  const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
+  const arrivalSuffix = flightLinked && item.arrivalDate && item.arrivalDate !== item.date
+    ? `・抵達 ${escapeHtml(formatDateYmd(item.arrivalDate))} ${escapeHtml(item.endTime || "")}`
+    : "";
+  const inlineActions = flightLinked
+    ? `<button class="mini-link" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button>`
+    : `<button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>`;
   return `
     <div class="timeline-transport-item">
       <div class="transport-time-column">
@@ -1033,12 +1118,9 @@ function renderTransportInline(item) {
       <div class="transport-inline slim-transport-row">
         <div class="transport-inline-main">
           <span class="transport-icon">${iconSvg(item.method === "步行" ? "route" : item.method === "飛機" ? "plane" : item.method === "火車" || item.method === "地鐵" || item.method === "高鐵" ? "station" : "route", "transport-method-svg")}</span>
-          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
         </div>
-        <div class="transport-inline-actions">
-          <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
-          <button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>
-        </div>
+        <div class="transport-inline-actions">${inlineActions}</div>
       </div>
     </div>
   `;
@@ -1082,13 +1164,15 @@ function renderPrintItineraryItem(item, currencyCode) {
 }
 
 function renderPrintTransport(item) {
-  const time = item.startTime || "時間未定";
+  const endTime = inferTransportEndTime(item);
+  const time = [item.startTime, endTime].filter(Boolean).join(" – ") || "時間未定";
+  const timing = transportDurationLabel(item) || (item.arrivalDate && item.arrivalDate !== item.date ? `抵達 ${formatDateYmd(item.arrivalDate)} ${endTime}` : endTime ? `抵達 ${endTime}` : "時間未填");
   return `
     <article class="print-entry print-transport-entry">
       <div class="print-entry-time">${escapeHtml(time)}</div>
       <div class="print-entry-body">
         <div class="print-transport-title">${escapeHtml(item.method || "交通")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
-        <div class="print-place">${escapeHtml(transportDurationLabel(item) || "時間未填")}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
+        <div class="print-place">${escapeHtml(timing)}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
         ${printDetail("路線", item.route)}
         ${printDetail("轉乘", item.transferInfo)}
         ${printDetail("備案", item.backup)}
@@ -1162,6 +1246,11 @@ function renderTransport(trip) {
 }
 
 function renderTransportCard(item) {
+  const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
+  const timingLabel = transportDurationLabel(item) || (item.endTime ? `${item.startTime || ""}–${item.endTime}` : "時間未填");
+  const actions = flightLinked
+    ? `<div class="item-actions"><button class="btn small" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button></div>`
+    : `<div class="item-actions"><button class="btn small" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="btn small danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button></div>`;
   return `
     <article class="item">
       <div class="item-row">
@@ -1169,14 +1258,12 @@ function renderTransportCard(item) {
           <div class="item-title">${formatDate(item.date)} ${escapeHtml(item.startTime || "時間未定")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
           <div class="item-meta">${escapeHtml(item.route || item.method || "交通方式未填")}</div>
         </div>
-        <div class="item-actions">
-          <button class="btn small" data-action="edit-transport" data-id="${item.id}">編輯</button>
-          <button class="btn small danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>
-        </div>
+        ${actions}
       </div>
       <div class="badges">
         <span class="badge dark">${escapeHtml(item.method || "交通")}</span>
-        <span class="badge blue">${escapeHtml(transportDurationLabel(item) || "時間未填")}</span>
+        <span class="badge blue">${escapeHtml(timingLabel)}</span>
+        ${flightLinked ? `<span class="badge">航班自動同步</span>` : ""}
         <span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>
         <span class="badge">行李友善度：${escapeHtml(item.luggageFriendly || "未填")}</span>
         <span class="badge amber">${escapeHtml(item.bookingStatus || "票券未填")}</span>
@@ -1221,6 +1308,7 @@ function renderFlightCard(item) {
       <div class="badges">
         <span class="badge blue">出發 ${formatDateTime(item.departure)}</span>
         <span class="badge green">抵達 ${formatDateTime(item.arrival)}</span>
+        ${item.syncToItinerary !== false && splitLocalDateTime(item.departure).date ? `<span class="badge">已加入每日行程</span>` : ""}
         <span class="badge">座位 ${escapeHtml(item.seat || "未選")}</span>
         <span class="badge amber">${escapeHtml(item.checkedBaggage || "行李未填")}</span>
       </div>
@@ -1875,10 +1963,11 @@ function openFlightForm(id) {
     fields: [
       selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), datalistField("airline", "航空公司", AIRLINE_SUGGESTIONS, false, true), text("flightNumber", "航班編號", false, true), text("bookingRef", "訂位代號 / PNR"),
       datalistField("fromAirport", "出發機場", AIRPORT_SUGGESTIONS, false, true), datalistField("toAirport", "抵達機場", AIRPORT_SUGGESTIONS, false, true), datetimeField("departure", "出發時間"), datetimeField("arrival", "抵達時間"),
-      text("terminal", "航廈"), text("gate", "登機門"), text("seat", "座位"), text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"), textarea("notes", "備註", true)
+      text("terminal", "航廈"), text("gate", "登機門"), text("seat", "座位"), text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"),
+      checkboxField("syncToItinerary", "自動加入每日行程", true), textarea("notes", "備註", true)
     ],
-    item: item || { type: "去程", cabin: "Economy" },
-    onSubmit: (data) => upsert("flights", item, data, "flight")
+    item: item || { type: "去程", cabin: "Economy", syncToItinerary: true },
+    onSubmit: (data) => saveFlightWithTransport(item, data)
   });
 }
 
@@ -1972,6 +2061,18 @@ function openEmergencyForm(id) {
     item: item || { type: "電話" },
     onSubmit: (data) => upsert("emergencyInfos", item, data, "emg")
   });
+}
+
+function saveFlightWithTransport(existing, data) {
+  let flight = existing;
+  if (flight) Object.assign(flight, data);
+  else {
+    flight = { id: uid("flight"), tripId: activeTrip().id, ...data };
+    state.flights.push(flight);
+  }
+  syncFlightTransportInState(state, flight);
+  const message = data.syncToItinerary === false ? "航班已儲存" : "航班已儲存並加入每日行程";
+  saveAndRender(message);
 }
 
 function upsert(collection, existing, data, prefix) {
@@ -2117,7 +2218,7 @@ function urlField(name, label, required = false) { return { name, label, type: "
 function selectField(name, label, options, required = false) { return { name, label, type: "select", options, required }; }
 function datalistField(name, label, options, full = false, required = false) { return { name, label, type: "datalist", options, full, required }; }
 function rangeField(name, label, required = false) { return { name, label, type: "range", min: 0, max: 100, step: 5, required }; }
-function checkboxField(name, label) { return { name, label, type: "checkbox" }; }
+function checkboxField(name, label, full = false) { return { name, label, type: "checkbox", full }; }
 
 function closeModal() {
   modalRoot.innerHTML = "";
@@ -2133,6 +2234,9 @@ function deleteRecord(collection, id) {
   if (!collection || !id) return;
   if (!confirm("確定要刪除嗎？")) return;
   state[collection] = state[collection].filter((item) => item.id !== id);
+  if (collection === "flights") {
+    state.transportSegments = state.transportSegments.filter((item) => !(item.sourceType === "flight" && item.sourceFlightId === id));
+  }
   saveAndRender("已刪除");
 }
 
