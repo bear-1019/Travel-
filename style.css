@@ -3257,3 +3257,171 @@ body[data-theme="coffee"] {
     margin-left: -0.06em;
   }
 }
+
+/* TripBoard 2.11.0 — departure countdown, quick add and daily routine */
+.home-trip-countdown {
+  width: fit-content;
+  margin-top: 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--theme-line, var(--line));
+  border-radius: 999px;
+  background: var(--theme-accent-soft, rgba(17, 24, 39, .06));
+  color: var(--theme-text-strong, var(--text));
+  font-weight: 800;
+  font-size: .86rem;
+  letter-spacing: .01em;
+}
+
+.home-quick-add-section {
+  margin-top: 20px;
+}
+
+.home-quick-add-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.home-quick-add {
+  min-height: 72px;
+  border: 1px solid var(--theme-line, var(--line));
+  border-radius: 20px;
+  background: var(--theme-card, var(--surface));
+  color: var(--theme-text-strong, var(--text));
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  box-shadow: 0 8px 22px rgba(25, 25, 25, .045);
+  font-weight: 800;
+}
+
+.home-quick-add:active {
+  transform: scale(.98);
+}
+
+.home-quick-add-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.daily-routine-strip {
+  width: min(100%, 650px);
+  margin: 18px auto 24px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--theme-line, var(--line));
+  border-bottom: 1px solid var(--theme-line, var(--line));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  color: var(--theme-text, var(--text));
+}
+
+.daily-routine-label {
+  color: var(--theme-muted, var(--muted));
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  white-space: nowrap;
+}
+
+.daily-routine-times {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  gap: 15px;
+}
+
+.daily-routine-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.daily-routine-time > span {
+  display: grid;
+  gap: 1px;
+}
+
+.daily-routine-time small {
+  color: var(--theme-muted, var(--muted));
+  font-size: .7rem;
+  line-height: 1;
+}
+
+.daily-routine-time strong {
+  color: var(--theme-text-strong, var(--text));
+  font-family: "Noto Serif TC", "Songti TC", "STFangsong", serif;
+  font-size: 1rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.daily-routine-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--theme-accent-contrast, var(--accent));
+  flex: 0 0 auto;
+}
+
+.daily-routine-divider {
+  width: 1px;
+  height: 30px;
+  background: var(--theme-line, var(--line));
+}
+
+.daily-routine-edit {
+  border: 0;
+  background: transparent;
+  color: var(--theme-text-strong, var(--text));
+  font-weight: 800;
+  padding: 8px 4px;
+}
+
+.daily-routine-edit::after {
+  content: " ›";
+}
+
+.daily-routine-strip.is-empty .daily-routine-times {
+  opacity: .68;
+}
+
+@media screen and (max-width: 640px) {
+  .home-quick-add-row {
+    grid-template-columns: repeat(4, minmax(68px, 1fr));
+    gap: 8px;
+  }
+
+  .home-quick-add {
+    min-height: 66px;
+    border-radius: 18px;
+    font-size: .82rem;
+  }
+
+  .daily-routine-strip {
+    grid-template-columns: 1fr auto;
+    gap: 10px 12px;
+    padding: 12px 4px;
+  }
+
+  .daily-routine-label {
+    grid-column: 1 / -1;
+  }
+
+  .daily-routine-times {
+    justify-content: flex-start;
+    gap: 11px;
+  }
+
+  .daily-routine-time {
+    gap: 6px;
+  }
+
+  .daily-routine-time strong {
+    font-size: .94rem;
+  }
+}

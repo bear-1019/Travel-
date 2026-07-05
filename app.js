@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.10.1-home-clean-header-align";
+const APP_VERSION = "2.11.0-countdown-quickadd-routine";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -70,6 +70,8 @@ function iconSvg(name, className = "app-icon") {
   const icons = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
+    sunrise: '<path d="M4 18h16"/><path d="M6 14a6 6 0 0 1 12 0"/><path d="M12 3v3M4.9 6.9 7 9M19.1 6.9 17 9M2 13h3M19 13h3"/>',
+    door: '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M9 21V6h6v15M13 13h.01"/><path d="M3 21h18"/>',
     route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
     bus: '<rect x="4" y="5" width="16" height="12" rx="3"/><path d="M7 17v2M17 17v2M7 9h10M8.5 13h.01M15.5 13h.01"/><path d="M6 9V7h12v2"/>',
     subway: '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M8 7h8M8 11h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M8 18l-2 3M16 18l2 3M10 21h4"/>',
@@ -164,7 +166,7 @@ function setThemePreference(key, showToast = true) {
 }
 
 const collections = [
-  "trips", "flights", "stays", "itineraryItems", "transportSegments", "packingItems",
+  "trips", "flights", "stays", "itineraryItems", "transportSegments", "dailyRoutines", "packingItems",
   "documents", "expenses", "todos", "places", "emergencyInfos"
 ];
 
@@ -243,6 +245,33 @@ function formatDateYmd(value) {
   const parts = String(value).split("-");
   if (parts.length !== 3) return value;
   return `${parts[0]}/${parts[1]}/${parts[2]}`;
+}
+
+function localDateOnly(value) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function tripCountdownText(trip) {
+  const start = localDateOnly(trip?.startDate);
+  const end = localDateOnly(trip?.endDate);
+  if (!start) return "尚未設定出發日期";
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayMs = 24 * 60 * 60 * 1000;
+  const daysToStart = Math.round((start - today) / dayMs);
+  if (daysToStart > 0) return `距離出發還有 ${daysToStart} 天`;
+  if (daysToStart === 0) return "今天出發";
+  if (end && today <= end) {
+    const tripDay = Math.floor((today - start) / dayMs) + 1;
+    return `旅程進行中・Day ${tripDay}`;
+  }
+  return "旅程已結束";
+}
+
+function getDailyRoutine(date, tripId = activeTrip()?.id) {
+  return state.dailyRoutines.find((item) => item.tripId === tripId && item.date === date) || null;
 }
 
 function addMinutesToTime(time, minutes) {
@@ -483,6 +512,7 @@ function createEmptyState() {
     stays: [],
     itineraryItems: [],
     transportSegments: [],
+    dailyRoutines: [],
     packingItems: [],
     documents: [],
     expenses: [],
@@ -889,6 +919,7 @@ function renderDashboard(trip) {
           </select>
           <div class="home-trip-date">${formatDateYmd(trip.startDate)} – ${formatDateYmd(trip.endDate)}</div>
           <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}</div>
+          <div class="home-trip-countdown">${escapeHtml(tripCountdownText(trip))}</div>
         </div>
         <div class="home-trip-side">
           <span class="trip-status-pill">${escapeHtml(trip.status || "規劃中")}</span>
@@ -896,6 +927,16 @@ function renderDashboard(trip) {
             <button class="home-mini-action" data-action="edit-trip" data-id="${trip.id}">編輯旅程</button>
             <button class="home-mini-action primary" data-action="new-trip">＋ 新旅程</button>
           </div>
+        </div>
+      </section>
+
+      <section class="home-section home-quick-add-section">
+        <div class="home-section-label">快速新增</div>
+        <div class="home-quick-add-row">
+          <button class="home-quick-add" data-action="new-itinerary">${iconSvg("calendar", "home-quick-add-icon")}<span>行程</span></button>
+          <button class="home-quick-add" data-action="new-transport">${iconSvg("route", "home-quick-add-icon")}<span>交通</span></button>
+          <button class="home-quick-add" data-action="new-flight">${iconSvg("plane", "home-quick-add-icon")}<span>航班</span></button>
+          <button class="home-quick-add" data-action="new-stay">${iconSvg("bed", "home-quick-add-icon")}<span>住宿</span></button>
         </div>
       </section>
 
@@ -983,6 +1024,7 @@ function renderItinerary(trip) {
   const nextDate = focusedIndex >= 0 && focusedIndex < days.length - 1 ? days[focusedIndex + 1] : "";
   const dayItems = items.filter((item) => item.date === focusedDate);
   const dayTransports = transports.filter((item) => item.date === focusedDate);
+  const dailyRoutine = getDailyRoutine(focusedDate, trip.id);
 
   return `
     <div class="itinerary-view mockup-itinerary-view">
@@ -1011,10 +1053,27 @@ function renderItinerary(trip) {
         <button class="quiet-action primary" data-action="new-itinerary" data-date="${focusedDate}"><span class="plus-mark">＋</span><span>行程</span></button>
       </div>
 
+      ${renderDailyRoutineStrip(focusedDate, dailyRoutine)}
+
       <section class="focused-day-timeline" aria-label="${escapeHtml(formatFocusedDate(focusedDate))}行程">
         ${renderFocusedDayTimeline(focusedDate, dayItems, dayTransports)}
       </section>
     </div>
+  `;
+}
+
+function renderDailyRoutineStrip(date, routine) {
+  const hasTimes = routine?.wakeTime || routine?.leaveTime;
+  return `
+    <section class="daily-routine-strip ${hasTimes ? "has-routine" : "is-empty"}" aria-label="每日作息">
+      <div class="daily-routine-label">每日作息</div>
+      <div class="daily-routine-times">
+        <span class="daily-routine-time">${iconSvg("sunrise", "daily-routine-icon")}<span><small>起床</small><strong>${escapeHtml(routine?.wakeTime || "未設定")}</strong></span></span>
+        <span class="daily-routine-divider" aria-hidden="true"></span>
+        <span class="daily-routine-time">${iconSvg("door", "daily-routine-icon")}<span><small>出門</small><strong>${escapeHtml(routine?.leaveTime || "未設定")}</strong></span></span>
+      </div>
+      <button class="daily-routine-edit" data-action="edit-daily-routine" data-date="${escapeHtml(date || "")}">${hasTimes ? "編輯" : "設定"}</button>
+    </section>
   `;
 }
 
@@ -1837,6 +1896,7 @@ async function handleAction(event) {
     "edit-itinerary": () => openItineraryForm(id),
     "new-transport": () => openTransportForm(null, date),
     "edit-transport": () => openTransportForm(id),
+    "edit-daily-routine": () => openDailyRoutineForm(date),
     "new-flight": () => openFlightForm(),
     "edit-flight": () => openFlightForm(id),
     "new-stay": () => openStayForm(),
@@ -2011,6 +2071,28 @@ function openTransportForm(id, defaultDate) {
       data.method = transportMethodLabel(data.method);
       data.endTime = addMinutesToTime(data.startTime, data.durationTotalMinutes);
       upsert("transportSegments", existing, data, "transport");
+    }
+  });
+}
+
+function openDailyRoutineForm(date) {
+  const targetDate = date || ui.filterDate || activeTrip().startDate || todayISO();
+  const existing = getDailyRoutine(targetDate);
+  openForm({
+    title: "設定每日作息",
+    fields: [
+      dateField("date", "日期", true),
+      timeField("wakeTime", "起床時間"),
+      timeField("leaveTime", "出門時間")
+    ],
+    item: existing || { date: targetDate, wakeTime: "", leaveTime: "" },
+    onSubmit: (data) => {
+      if (!data.wakeTime && !data.leaveTime) {
+        if (existing) state.dailyRoutines = state.dailyRoutines.filter((item) => item.id !== existing.id);
+        saveAndRender("已清除當日作息");
+        return;
+      }
+      upsert("dailyRoutines", existing, data, "routine");
     }
   });
 }

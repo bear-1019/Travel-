@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.10.1-home-clean-header-align";
+const CACHE_NAME = "tripboard-v2.11.0-countdown-quickadd-routine";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.10.1",
-  "./app.js?v=2.10.1",
+  "./style.css?v=2.11.0",
+  "./app.js?v=2.11.0",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
