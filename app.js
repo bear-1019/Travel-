@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.2.0-polish";
+const APP_VERSION = "2.4.0-controls";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -666,7 +666,13 @@ function renderDashboard(trip) {
           <div class="home-trip-date">${formatDateYmd(trip.startDate)} – ${formatDateYmd(trip.endDate)}</div>
           <div class="home-trip-meta">${tripDays.length} 天・${escapeHtml(trip.destination || "目的地未填")}・${escapeHtml(trip.travelers || "旅伴未填")}</div>
         </div>
-        <button class="trip-status-pill" data-action="edit-trip" data-id="${trip.id}">${escapeHtml(trip.status || "規劃中")}</button>
+        <div class="home-trip-side">
+          <span class="trip-status-pill">${escapeHtml(trip.status || "規劃中")}</span>
+          <div class="home-trip-actions">
+            <button class="home-mini-action" data-action="edit-trip" data-id="${trip.id}">編輯旅程</button>
+            <button class="home-mini-action primary" data-action="new-trip">＋ 新旅程</button>
+          </div>
+        </div>
       </section>
 
       <section class="home-section">
@@ -686,7 +692,10 @@ function renderDashboard(trip) {
       </section>
 
       <section class="home-section">
-        <div class="home-section-label">規劃進度</div>
+        <div class="home-section-heading">
+          <div class="home-section-label">規劃進度</div>
+          <button class="home-section-action" data-action="edit-trip" data-id="${trip.id}">調整進度</button>
+        </div>
         <div class="card simple-progress-card">
           ${renderSimpleProgressRow("行程", itineraryPct, "calendar")}
           ${renderSimpleProgressRow("住宿", stayPct, "bed")}

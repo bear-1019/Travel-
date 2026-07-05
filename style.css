@@ -1846,7 +1846,7 @@ h1, h2, h3,
    ========================================================= */
 :root {
   --display-serif: "Noto Serif TC", "Songti TC", "STSong", "PMingLiU", serif;
-  --number-serif: "Cormorant Garamond", "Times New Roman", serif;
+  --number-serif: "Libre Baskerville", "Baskerville", "Iowan Old Style", "Times New Roman", serif;
 }
 
 /* Keep the visual language to one Chinese serif + one UI sans family. */
@@ -1973,4 +1973,163 @@ h1, h2, h3,
   .home-trip-date { font-size: .82rem; }
   .mobile-tab-icon { width: 23px; height: 23px !important; }
   .mobile-nav-icon-svg { width: 20px; height: 20px; }
+}
+
+
+/* =========================================================
+   TripBoard 2.3 — mockup-like numerals and stronger titles
+   ========================================================= */
+/* Libre Baskerville has steadier, book-like numerals that more closely
+   match the concept mockup than Cormorant Garamond. */
+.next-focus-time,
+.next-focus-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.day-date,
+.home-trip-date,
+.stat-value,
+.print-entry-time {
+  font-family: var(--number-serif);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Make the current-trip hierarchy more confident without adding another font. */
+.home-section-label,
+.trip-label {
+  font-family: var(--display-serif);
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+.home-trip-select,
+.home-trip-name {
+  font-family: var(--display-serif);
+  font-weight: 800;
+  letter-spacing: .005em;
+}
+
+/* Itinerary names should carry the visual hierarchy of the concept image. */
+.item-title,
+.mockup-itinerary-card .item-title,
+.next-focus-copy h2 {
+  font-family: var(--display-serif);
+  font-weight: 800;
+  letter-spacing: .005em;
+}
+
+/* Keep dates/times bold enough to remain legible on small screens. */
+.time-mark strong,
+.transport-time-column strong,
+.focused-date-label strong,
+.next-focus-time,
+.simple-budget-copy strong,
+.stat-value {
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   TripBoard 2.4 — explicit trip controls, editable progress,
+   and corrected More-page alignment
+   ========================================================= */
+.home-trip-side {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home-trip-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.home-mini-action,
+.home-section-action {
+  appearance: none;
+  border: 1px solid rgba(21, 39, 70, .13);
+  background: #fffdf9;
+  color: var(--navy, #152746);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-family: var(--ui-sans);
+  font-size: .73rem;
+  line-height: 1.15;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.home-mini-action.primary {
+  background: var(--navy, #152746);
+  border-color: var(--navy, #152746);
+  color: #fff;
+}
+.home-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.home-section-heading .home-section-label { margin-bottom: 0; }
+.home-section-action {
+  padding-inline: 11px;
+  background: transparent;
+}
+.home-section-action:active,
+.home-mini-action:active { transform: scale(.98); }
+
+/* More had inherited a centered cross-axis from the generic mobile topbar.
+   Force its heading to use the same left edge as the cards below. */
+.more-view .topbar,
+.view-more .topbar {
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+  margin-left: 0;
+  padding-left: 0;
+}
+.more-view .topbar > div:first-child,
+.view-more .topbar > div:first-child {
+  width: 100%;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+@media screen and (max-width: 960px) {
+  .home-trip-card { align-items: stretch; }
+  .home-trip-side { min-width: 116px; }
+  .more-view .topbar,
+  .view-more .topbar { align-items: flex-start !important; }
+}
+
+@media screen and (max-width: 520px) {
+  .home-trip-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+  }
+  .home-trip-side {
+    min-width: 0;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(45,49,55,.08);
+  }
+  .home-trip-actions { flex-wrap: nowrap; }
+  .home-mini-action { padding: 7px 9px; font-size: .7rem; }
+  .home-section-heading { margin-inline: 2px; }
+  .home-section-action { font-size: .7rem; padding: 6px 9px; }
 }
