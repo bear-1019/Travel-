@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.4.0-controls";
+const APP_VERSION = "2.5.0-fangsong";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 
 function hasGoogleSyncConfig() {
@@ -18,7 +18,7 @@ function iconSvg(name, className = "app-icon") {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
     route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
-    plane: '<path d="M10.8 20v-5.4L3 9.6V7.5l7.8 2.7V5.2C10.8 4 11.3 3 12 3s1.2 1 1.2 2.2v5l7.8-2.7v2.1l-7.8 5V20l2.7 1.8v1.1L12 22l-3.9.9v-1.1L10.8 20Z" fill="currentColor" stroke="none"/>',
+    plane: '<path d="M12 2.5c.82 0 1.4.78 1.4 1.72v5.05l7.1 4.12v2.02l-7.1-2.08v5.08l2.42 1.82v1.42L12 20.55l-3.82 1.1v-1.42l2.42-1.82v-5.08l-7.1 2.08v-2.02l7.1-4.12V4.22c0-.94.58-1.72 1.4-1.72Z" fill="currentColor" stroke="none"/>',
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
     luggage: '<rect x="6" y="6" width="12" height="15" rx="2"/><path d="M9 6V4h6v2M9 10v7M15 10v7M4 21h16"/>',
     ticket: '<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 6v12"/>',
@@ -1493,9 +1493,9 @@ function renderGoogleSyncPanel() {
   return `
     <p class="subtitle">你和旅伴輸入同一組共享碼與 PIN，就會讀寫同一份旅行資料。暱稱只用來記錄最後修改者。</p>
     <div class="form-grid">
-      <div class="field"><label>共享碼</label><input id="google-share-code" placeholder="例如 PARIS2026" value="${escapeHtml(saved.shareCode || "")}" /></div>
-      <div class="field"><label>PIN</label><input id="google-pin" type="password" inputmode="numeric" placeholder="例如 1019" value="${escapeHtml(saved.pin || "")}" /></div>
-      <div class="field full"><label>暱稱</label><input id="google-user-name" placeholder="例如 Bear / 女朋友" value="${escapeHtml(saved.userName || "")}" /></div>
+      <div class="field"><label>共享碼</label><input id="google-share-code" placeholder="例如 TOKYO2026" value="${escapeHtml(saved.shareCode || "")}" /></div>
+      <div class="field"><label>PIN</label><input id="google-pin" type="password" inputmode="numeric" placeholder="例如 1234" value="${escapeHtml(saved.pin || "")}" /></div>
+      <div class="field full"><label>暱稱</label><input id="google-user-name" placeholder="例如 Kitty / 帕寶" value="${escapeHtml(saved.userName || "")}" /></div>
     </div>
     <div class="grid">
       <button class="btn primary block" data-action="google-cloud-save">儲存到共享雲端</button>

@@ -1846,7 +1846,7 @@ h1, h2, h3,
    ========================================================= */
 :root {
   --display-serif: "Noto Serif TC", "Songti TC", "STSong", "PMingLiU", serif;
-  --number-serif: "Libre Baskerville", "Baskerville", "Iowan Old Style", "Times New Roman", serif;
+  --number-serif: "STFangsong", "FangSong", "FangSong_GB2312", "Noto Serif TC", "Songti TC", "STSong", "PMingLiU", serif;
 }
 
 /* Keep the visual language to one Chinese serif + one UI sans family. */
@@ -2132,4 +2132,68 @@ h1, h2, h3,
   .home-mini-action { padding: 7px 9px; font-size: .7rem; }
   .home-section-heading { margin-inline: 2px; }
   .home-section-action { font-size: .7rem; padding: 6px 9px; }
+}
+
+
+/* =========================================================
+   TripBoard 2.5 — FangSong numerals, aligned transport times,
+   refreshed sync examples, and a symmetric airplane icon
+   ========================================================= */
+:root {
+  --number-serif: "STFangsong", "FangSong", "FangSong_GB2312", "Noto Serif TC", "Songti TC", "STSong", "PMingLiU", serif;
+}
+
+/* Use the same FangSong/Song family for all emphasized numerals. */
+.next-focus-time,
+.next-focus-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.day-date,
+.home-trip-date,
+.stat-value,
+.print-entry-time {
+  font-family: var(--number-serif);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-style: normal;
+}
+
+/* Start/end transport times share the exact same measuring box and align
+   with the two timeline nodes, instead of floating as two separate lines. */
+.transport-time-column {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: end;
+  align-items: center;
+  align-self: stretch;
+  align-content: stretch;
+  gap: 0;
+  padding: 4px 0;
+}
+.transport-time-column strong { grid-row: 1; }
+.transport-time-column span { grid-row: 3; }
+.transport-time-column strong,
+.transport-time-column span {
+  display: block;
+  width: 5.35ch;
+  min-width: 5.35ch;
+  text-align: right;
+  line-height: 1;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* Give the mobile airplane glyph a little breathing room even on small iPhones. */
+.mobile-tabs button[data-view="flights"] .mobile-nav-icon-svg,
+.nav-button[data-view="flights"] .nav-icon-svg {
+  overflow: visible;
+  padding: 1px;
 }
