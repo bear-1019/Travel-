@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.7.1-airport-fangsong";
+const APP_VERSION = "2.7.2-final-icons";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -33,13 +33,13 @@ function iconSvg(name, className = "app-icon") {
     route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
     plane: '<path d="M12 2.5c.82 0 1.4.78 1.4 1.72v5.05l7.1 4.12v2.02l-7.1-2.08v5.08l2.42 1.82v1.42L12 20.55l-3.82 1.1v-1.42l2.42-1.82v-5.08l-7.1 2.08v-2.02l7.1-4.12V4.22c0-.94.58-1.72 1.4-1.72Z" fill="currentColor" stroke="none"/>',
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
-    luggage: '<rect x="6" y="6" width="12" height="15" rx="2"/><path d="M9 6V4h6v2M9 10v7M15 10v7M4 21h16"/>',
+    luggage: '<path d="M7 7h10a2 2 0 0 1 2 2v10H5V9a2 2 0 0 1 2-2Z"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M9 11v5M15 11v5M7 19v2M17 19v2"/>',
     ticket: '<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 6v12"/>',
     wallet: '<path d="M3 7h16a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2V7Z"/><path d="M3 7V5a2 2 0 0 1 2-2h12v4M16 12h5"/>',
     check: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 12 3 3 7-7"/>',
-    pin: '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    pin: '<path d="M12 21s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11Z"/><circle cx="12" cy="10" r="2.25"/>',
     alert: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
-    sync: '<path d="M20 7h-5V2"/><path d="M20 7a8 8 0 1 0 1 7M4 17h5v5"/><path d="M4 17a8 8 0 0 0 14 3"/>',
+    sync: '<path d="M20 7.5A8 8 0 0 0 6.7 4.7L4.5 7"/><path d="M4.5 3.5V7H8"/><path d="M4 16.5a8 8 0 0 0 13.3 2.8l2.2-2.3"/><path d="M19.5 20.5V17H16"/>',
     more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
@@ -48,7 +48,7 @@ function iconSvg(name, className = "app-icon") {
     cafe: '<path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M7 3v2M11 3v2"/>',
     shopping: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     activity: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    airport: '<path d="M12 3.2c.78 0 1.3.72 1.3 1.58v5.1l6.45 3.75v1.86l-6.45-1.9v4.76l2.25 1.67v1.28L12 20.28l-3.55 1.02v-1.28l2.25-1.67v-4.76l-6.45 1.9v-1.86l6.45-3.75v-5.1c0-.86.52-1.58 1.3-1.58Z" fill="currentColor" stroke="none"/>',
+    airport: '<path d="M4 11.2 20 4.8 14.1 19l-3.2-5.4L4 11.2Z"/><path d="m10.9 13.6 9.1-8.8"/>',
     station: '<rect x="5" y="3" width="14" height="16" rx="3"/><path d="M8 7h8M8 14h8M8 19l-2 2M16 19l2 2"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
     moon: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
     rest: '<path d="M4 19h16M6 16h12M8 16V8h8v8M10 8V5h4v3"/>',
@@ -1492,19 +1492,19 @@ function renderMore(trip) {
     {
       title: "旅程管理",
       items: [
-        ["transport", "交通總覽", "查看所有點到點交通與備案", "↔"],
-        ["documents", "文件與票券", "整理門票、訂單與保險資訊", "⌑"],
-        ["budget", "預算", "查看自動加總與支出紀錄", "$"],
-        ["packing", "行李", "出發前與回程檢查清單", "□"]
+        ["transport", "交通總覽", "查看所有點到點交通與備案", "route"],
+        ["documents", "文件與票券", "整理門票、訂單與保險資訊", "ticket"],
+        ["budget", "預算", "查看自動加總與支出紀錄", "wallet"],
+        ["packing", "行李", "出發前與回程檢查清單", "luggage"]
       ]
     },
     {
       title: "其他工具",
       items: [
-        ["todos", "待辦事項", "記錄訂票、訂房與出發前任務", "✓"],
-        ["places", "地點庫", "收藏還沒排進日期的地點", "⌖"],
-        ["emergency", "緊急資訊", "保險、聯絡方式與緊急電話", "!"],
-        ["settings", "同步與備份", "Google Sheets、JSON 匯出與本機資料", "⚙"]
+        ["todos", "待辦事項", "記錄訂票、訂房與出發前任務", "check"],
+        ["places", "地點庫", "收藏還沒排進日期的地點", "pin"],
+        ["emergency", "緊急資訊", "保險、聯絡方式與緊急電話", "alert"],
+        ["settings", "同步與備份", "Google Sheets、JSON 匯出與本機資料", "sync"]
       ]
     }
   ];
@@ -1518,7 +1518,7 @@ function renderMore(trip) {
           <div class="card more-menu-card">
             ${group.items.map(([view, label, description, icon]) => `
               <button class="more-menu-row" data-view="${view}">
-                <span class="more-menu-icon">${icon}</span>
+                <span class="more-menu-icon">${iconSvg(icon, "more-menu-svg")}</span>
                 <span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(description)}</small></span>
                 <b>›</b>
               </button>`).join("")}

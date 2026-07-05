@@ -2958,3 +2958,43 @@ h3 {
   max-height: none;
   overflow: visible !important;
 }
+
+/* =========================================================
+   TripBoard 2.7.2 — final icon consistency pass
+   ========================================================= */
+.more-menu-icon {
+  display: grid;
+  place-items: center;
+  overflow: visible !important;
+}
+.more-menu-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  overflow: visible !important;
+  stroke-width: 1.7;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Paper-plane airport mark: intentionally smaller than the orb so Safari
+   always leaves a clean safety margin on every side. */
+.itinerary-type-orb .itinerary-type-icon-svg {
+  width: 20px;
+  height: 20px;
+  max-width: 62%;
+  max-height: 62%;
+  overflow: visible !important;
+}
+
+/* All navigation and More-menu icons share the same optical box. */
+.more-menu-icon,
+.nav-emoji,
+.mobile-tab-icon,
+.itinerary-type-orb,
+.transport-icon,
+.budget-wallet-icon,
+.focused-empty-icon {
+  contain: none;
+  isolation: isolate;
+}
