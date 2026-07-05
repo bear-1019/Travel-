@@ -2888,3 +2888,73 @@ body[data-theme="charcoal"] {
   .theme-compact-panel { padding: 8px !important; }
   .theme-chip { min-height: 36px; padding: 6px 9px; font-size: .71rem; }
 }
+
+/* =========================================================
+   TripBoard 2.7.1 — restore FangSong typography and airport icon
+   ========================================================= */
+:root {
+  --display-serif: fangsong, "STFangsong", "FangSong SC", "FangSong", "FangSong_GB2312", "STSong", "Songti TC", "Noto Serif TC", "PMingLiU", serif;
+  --number-serif: fangsong, "STFangsong", "FangSong SC", "FangSong", "FangSong_GB2312", "STSong", "Songti TC", "Noto Serif TC", "PMingLiU", serif;
+}
+
+/* Explicitly keep the main travel content in the FangSong/Song family.
+   Theme switching must only change colors, never typography. */
+.itinerary-screen-header h1,
+.focused-date-label strong,
+.focused-date-label span,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.item-title,
+.mockup-itinerary-card .item-title,
+.day-title,
+.day-date,
+.home-section-label,
+.home-trip-select,
+.home-trip-name,
+.home-trip-date,
+.next-focus-time,
+.next-focus-date,
+.next-focus-copy h2,
+.simple-progress-label,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.stat-value,
+.topbar h1,
+.topbar h2,
+.topbar h3,
+h1,
+h2,
+h3 {
+  font-family: var(--display-serif) !important;
+  font-style: normal;
+}
+
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.next-focus-time,
+.next-focus-date,
+.home-trip-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.stat-value {
+  font-family: var(--number-serif) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* The airport symbol is now the same front-facing airplane language as the
+   flight navigation icon, drawn completely inside the 24×24 safe area. */
+.itinerary-type-orb .itinerary-type-icon-svg {
+  width: 22px;
+  height: 22px;
+  max-width: none;
+  max-height: none;
+  overflow: visible !important;
+}

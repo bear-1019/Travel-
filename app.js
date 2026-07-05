@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.7.0-compact-themes";
+const APP_VERSION = "2.7.1-airport-fangsong";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -48,7 +48,7 @@ function iconSvg(name, className = "app-icon") {
     cafe: '<path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M7 3v2M11 3v2"/>',
     shopping: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     activity: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    airport: '<path d="M4 14.5 20 7.5l-5.3 9.2-3-3-3.4 4.1-1.4-.8 2.3-5.1-5.2 1.6Z"/><path d="m10.2 12.5 3.7-1.6"/>',
+    airport: '<path d="M12 3.2c.78 0 1.3.72 1.3 1.58v5.1l6.45 3.75v1.86l-6.45-1.9v4.76l2.25 1.67v1.28L12 20.28l-3.55 1.02v-1.28l2.25-1.67v-4.76l-6.45 1.9v-1.86l6.45-3.75v-5.1c0-.86.52-1.58 1.3-1.58Z" fill="currentColor" stroke="none"/>',
     station: '<rect x="5" y="3" width="14" height="16" rx="3"/><path d="M8 7h8M8 14h8M8 19l-2 2M16 19l2 2"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
     moon: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
     rest: '<path d="M4 19h16M6 16h12M8 16V8h8v8M10 8V5h4v3"/>',
