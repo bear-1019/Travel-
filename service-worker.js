@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.7.6-arrow-center";
+const CACHE_NAME = "tripboard-v2.7.7-arrow-optical";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.7.6",
-  "./app.js?v=2.7.6",
+  "./style.css?v=2.7.7",
+  "./app.js?v=2.7.7",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
