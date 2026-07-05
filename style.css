@@ -3124,3 +3124,82 @@ h3 {
     padding-right: 28px;
   }
 }
+
+
+/* TripBoard 2.9 — additional palettes */
+body[data-theme="sky"] {
+  --theme-body-bg: #edf6fb; --theme-sidebar-bg: #f3f9fc; --theme-card: #fbfdff;
+  --theme-card-soft: #f5fafc; --theme-card-tint: #dfeef6; --theme-input-bg: #ffffff;
+  --theme-segment: #deebf2; --theme-text-strong: #24506f; --theme-text: #3e647d;
+  --theme-muted: #7892a3; --theme-line: #cfe0ea; --theme-line-strong: #b8cfdd;
+  --theme-accent: #24506f; --theme-accent-contrast: #ffffff; --theme-accent-soft: #dcebf3;
+  --theme-overlay: rgba(36,80,111,.28); --theme-focus-ring: rgba(36,80,111,.11);
+  --theme-shadow: 0 8px 24px rgba(45,82,105,.09);
+}
+body[data-theme="peach"] {
+  --theme-body-bg: #fbf0e9; --theme-sidebar-bg: #fdf5ef; --theme-card: #fffaf6;
+  --theme-card-soft: #fdf6f1; --theme-card-tint: #f3e3d9; --theme-input-bg: #fffaf7;
+  --theme-segment: #f1e2d9; --theme-text-strong: #7a4638; --theme-text: #825b50;
+  --theme-muted: #a08379; --theme-line: #ead5c9; --theme-line-strong: #d9bfb0;
+  --theme-accent: #7a4638; --theme-accent-contrast: #ffffff; --theme-accent-soft: #f1dfd6;
+  --theme-overlay: rgba(122,70,56,.28); --theme-focus-ring: rgba(122,70,56,.11);
+  --theme-shadow: 0 8px 24px rgba(107,67,55,.08);
+}
+body[data-theme="sand"] {
+  --theme-body-bg: #f2eadc; --theme-sidebar-bg: #f6efe3; --theme-card: #fffaf1;
+  --theme-card-soft: #faf4e9; --theme-card-tint: #e8dcc9; --theme-input-bg: #fffbf4;
+  --theme-segment: #e7dccb; --theme-text-strong: #5b4632; --theme-text: #705b46;
+  --theme-muted: #948371; --theme-line: #dfd0bd; --theme-line-strong: #cab89f;
+  --theme-accent: #5b4632; --theme-accent-contrast: #ffffff; --theme-accent-soft: #e8dccb;
+  --theme-overlay: rgba(91,70,50,.29); --theme-focus-ring: rgba(91,70,50,.11);
+  --theme-shadow: 0 8px 24px rgba(85,66,48,.09);
+}
+body[data-theme="ocean"] {
+  --theme-body-bg: #0c2333; --theme-sidebar-bg: #102b3d; --theme-card: #143247;
+  --theme-card-soft: #183a51; --theme-card-tint: #20455e; --theme-input-bg: #1b3d55;
+  --theme-segment: #19394f; --theme-text-strong: #e8f5fb; --theme-text: #d2e7f0;
+  --theme-muted: #9cb8c7; --theme-line: rgba(190,220,234,.18); --theme-line-strong: rgba(207,231,241,.31);
+  --theme-accent: #d9f0fa; --theme-accent-contrast: #123044; --theme-accent-soft: #214a63;
+  --theme-overlay: rgba(2,14,22,.66); --theme-focus-ring: rgba(217,240,250,.12);
+  --theme-shadow: 0 14px 34px rgba(2,11,18,.38);
+}
+body[data-theme="plum"] {
+  --theme-body-bg: #291a2d; --theme-sidebar-bg: #321f36; --theme-card: #38223d;
+  --theme-card-soft: #412846; --theme-card-tint: #513357; --theme-input-bg: #462d4b;
+  --theme-segment: #402745; --theme-text-strong: #f6eaf4; --theme-text: #ead7e7;
+  --theme-muted: #c0a5ba; --theme-line: rgba(235,207,230,.17); --theme-line-strong: rgba(242,221,238,.30);
+  --theme-accent: #f1ddea; --theme-accent-contrast: #38223d; --theme-accent-soft: #533459;
+  --theme-overlay: rgba(18,7,20,.66); --theme-focus-ring: rgba(241,221,234,.12);
+  --theme-shadow: 0 14px 34px rgba(15,5,17,.37);
+}
+body[data-theme="coffee"] {
+  --theme-body-bg: #2a211c; --theme-sidebar-bg: #312720; --theme-card: #382c25;
+  --theme-card-soft: #403229; --theme-card-tint: #4c3b30; --theme-input-bg: #44352c;
+  --theme-segment: #403229; --theme-text-strong: #f7ecdd; --theme-text: #e7d8c5;
+  --theme-muted: #bba995; --theme-line: rgba(231,214,194,.17); --theme-line-strong: rgba(241,226,207,.30);
+  --theme-accent: #f2dfc5; --theme-accent-contrast: #382c25; --theme-accent-soft: #4e3c31;
+  --theme-overlay: rgba(15,10,7,.66); --theme-focus-ring: rgba(242,223,197,.12);
+  --theme-shadow: 0 14px 34px rgba(12,8,5,.37);
+}
+
+.budget-unlimited-line {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  color: var(--theme-text-strong);
+  letter-spacing: .02em;
+}
+.budget-ring-unlimited {
+  border: 6px solid var(--theme-accent);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.budget-ring-unlimited strong {
+  position: static;
+  font-size: 1.35rem;
+  color: var(--theme-text-strong);
+}
+.field.is-disabled { opacity: .58; }
+.field.is-disabled input { cursor: not-allowed; }

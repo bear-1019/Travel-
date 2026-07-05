@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.8.0-flight-itinerary";
+const CACHE_NAME = "tripboard-v2.9.0-form-options";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.8.0",
-  "./app.js?v=2.8.0",
+  "./style.css?v=2.9.0",
+  "./app.js?v=2.9.0",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",

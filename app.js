@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.8.0-flight-itinerary";
+const APP_VERSION = "2.9.0-form-options";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -12,7 +12,13 @@ const THEMES = [
   { key: "sage", label: "鼠尾草綠", description: "淡綠米色・墨綠文字", preview: ["#eef3ed", "#fbfdf9", "#234137"], dark: false, themeColor: "#eef3ed" },
   { key: "rose", label: "乾燥玫瑰", description: "霧粉裸色・酒紅文字", preview: ["#f7efef", "#fffafa", "#6f3745"], dark: false, themeColor: "#f7efef" },
   { key: "lavender", label: "薰衣草紫", description: "淡紫灰底・深紫字體", preview: ["#f1eff7", "#fbfaff", "#493d68"], dark: false, themeColor: "#f1eff7" },
+  { key: "sky", label: "晴空藍", description: "淡天空藍・海軍藍文字", preview: ["#edf6fb", "#fbfdff", "#24506f"], dark: false, themeColor: "#edf6fb" },
+  { key: "peach", label: "蜜桃杏", description: "柔杏粉底・磚紅文字", preview: ["#fbf0e9", "#fffaf6", "#7a4638"], dark: false, themeColor: "#fbf0e9" },
+  { key: "sand", label: "沙丘棕", description: "沙色米底・深咖文字", preview: ["#f2eadc", "#fffaf1", "#5b4632"], dark: false, themeColor: "#f2eadc" },
   { key: "forest", label: "深林綠", description: "深墨綠底・柔白文字", preview: ["#12231e", "#1b3029", "#eaf5ef"], dark: true, themeColor: "#12231e" },
+  { key: "ocean", label: "深海藍", description: "深海藍底・冰藍文字", preview: ["#0c2333", "#143247", "#e8f5fb"], dark: true, themeColor: "#0c2333" },
+  { key: "plum", label: "深梅紫", description: "深紫紅底・柔粉白字", preview: ["#291a2d", "#38223d", "#f6eaf4"], dark: true, themeColor: "#291a2d" },
+  { key: "coffee", label: "可可咖啡", description: "深咖啡底・奶油文字", preview: ["#2a211c", "#382c25", "#f7ecdd"], dark: true, themeColor: "#2a211c" },
   { key: "charcoal", label: "石墨黑", description: "深灰黑底・冷白文字", preview: ["#181a1f", "#24272e", "#f0f2f6"], dark: true, themeColor: "#181a1f" }
 ];
 const THEME_MAP = Object.fromEntries(THEMES.map((theme) => [theme.key, theme]));
@@ -460,6 +466,7 @@ function createSeedState() {
       endDate: "2027-01-01",
       status: "規劃中",
       budget: 80000,
+      budgetUnlimited: false,
       currency: "TWD",
       travelers: "2 人",
       progressFlights: 80,
@@ -474,7 +481,7 @@ function createSeedState() {
       id: uid("flight"), tripId, type: "去程", airline: "Emirates", flightNumber: "EK367 / EK073", syncToItinerary: true,
       bookingRef: "待填", fromAirport: "TPE 台北桃園", toAirport: "CDG 巴黎戴高樂",
       departure: "2026-12-23T00:30", arrival: "2026-12-23T12:25", terminal: "待確認", gate: "待確認",
-      seat: "待選位", cabin: "Economy", checkedBaggage: "30kg", carryOn: "7kg", price: 40000, notes: "確認轉機時間、線上報到與行李規定。"
+      seat: "", cabin: "Economy", checkedBaggage: "30kg", carryOn: "7kg", price: 0, notes: "確認轉機時間、線上報到與行李規定。"
     }],
     stays: [{
       id: uid("stay"), tripId, name: "Hotel Eiffel Seine", type: "飯店", checkInDate: "2026-12-23", checkOutDate: "2026-12-24",
@@ -483,8 +490,8 @@ function createSeedState() {
       paidStatus: "待付款", cancellationDeadline: "2026-12-10", luggageStorage: "可詢問", contact: "待填", notes: "希望有陽台或鐵塔景。"
     }],
     itineraryItems: [
-      { id: uid("item"), tripId, date: "2026-12-23", startTime: "12:25", endTime: "13:30", type: "機場", title: "抵達巴黎 CDG", placeName: "Charles de Gaulle Airport", address: "CDG Airport", mapUrl: "", website: "", openingHours: "", lastEntry: "", ticketRequired: "否", ticketStatus: "不需", ticketPrice: 0, ticketLink: "", reservationNumber: "", budget: 0, status: "已排入", priority: "必去", weatherType: "室內", notes: "入境、領行李、確認進市區交通。" },
-      { id: uid("item"), tripId, date: "2026-12-24", startTime: "10:00", endTime: "13:00", type: "景點", title: "羅浮宮", placeName: "Musée du Louvre", address: "Rue de Rivoli, Paris", mapUrl: "", website: "", openingHours: "09:00-18:00", lastEntry: "17:00", ticketRequired: "是", ticketStatus: "待購買", ticketPrice: 22, ticketLink: "", reservationNumber: "", budget: 22, status: "想去", priority: "必去", weatherType: "室內", notes: "建議提早 15 分鐘到，先確認閉館日與預約時段。" }
+      { id: uid("item"), tripId, date: "2026-12-23", startTime: "12:25", endTime: "13:30", type: "機場", title: "抵達巴黎 CDG", address: "CDG Airport", mapUrl: "", website: "", openingHours: "", lastEntry: "", ticketRequired: "否", ticketStatus: "不需", ticketPrice: 0, ticketLink: "", budget: 0, status: "已排入", priority: "必去", weatherType: "室內", notes: "入境、領行李、確認進市區交通。" },
+      { id: uid("item"), tripId, date: "2026-12-24", startTime: "10:00", endTime: "13:00", type: "景點", title: "羅浮宮", address: "Rue de Rivoli, Paris", mapUrl: "", website: "", openingHours: "09:00-18:00", lastEntry: "17:00", ticketRequired: "是", ticketStatus: "待購買", ticketPrice: 22, ticketLink: "", budget: 22, status: "想去", priority: "必去", weatherType: "室內", notes: "建議提早 15 分鐘到，先確認閉館日與預約時段。" }
     ],
     transportSegments: [{
       id: uid("transport"), tripId, date: "2026-12-24", startTime: "09:20", fromName: "Hotel Eiffel Seine", toName: "羅浮宮",
@@ -500,7 +507,7 @@ function createSeedState() {
       id: uid("doc"), tripId, name: "羅浮宮門票", type: "門票", relatedDate: "2026-12-24", relatedTo: "羅浮宮", bookingNumber: "待購買",
       amount: 22, currency: "EUR", attachmentUrl: "", notes: "購票後貼上 QR Code 圖片連結或 PDF 連結。"
     }],
-    expenses: [{ id: uid("exp"), tripId, date: "2026-12-23", category: "機票", title: "台北巴黎來回機票", amount: 40000, currency: "TWD", paidBy: "自己", splitWith: "自己", status: "已付款", notes: "先填範例，可自行刪除。" }],
+    expenses: [],
     todos: [{ id: uid("todo"), tripId, title: "確認 CDG 到巴黎市區交通", dueDate: "2026-12-01", priority: "高", status: "未完成", owner: "自己", relatedTo: "抵達巴黎", notes: "比較 RER、巴士、Uber。" }],
     places: [{ id: uid("place"), tripId, name: "Café de Flore", type: "咖啡廳", city: "Paris", address: "172 Bd Saint-Germain", mapUrl: "", status: "想去", tags: "經典咖啡廳,拍照", notes: "可排早餐或下午茶。" }],
     emergencyInfos: [{ id: uid("emg"), tripId, title: "歐洲緊急電話", type: "電話", value: "112", notes: "歐盟通用緊急電話。" }]
@@ -724,7 +731,7 @@ function getBudgetSummary(trip) {
   byTrip("itineraryItems").forEach((item) => {
     const amount = parseNumber(item.budget) || parseNumber(item.ticketPrice);
     const source = parseNumber(item.budget) ? "行程預估花費" : "門票價格";
-    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.placeName), amount, defaultCurrency, source);
+    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.address), amount, defaultCurrency, source);
   });
   byTrip("transportSegments").forEach((item) => {
     push(plannedRows, "交通", budgetTitle(item.method, item.fromName && item.toName ? `${item.fromName} → ${item.toName}` : item.route), item.cost, item.currency || defaultCurrency, "交通費用");
@@ -740,8 +747,9 @@ function getBudgetSummary(trip) {
   const expenseTotal = expenseRows.reduce((sum, item) => sum + parseNumber(item.amount), 0);
   const paidTotal = expenseRows.filter((item) => item.source === "已付款").reduce((sum, item) => sum + parseNumber(item.amount), 0);
   const total = plannedTotal + expenseTotal;
-  const target = parseNumber(trip.budget);
-  return { plannedRows, expenseRows, plannedTotal, expenseTotal, paidTotal, total, target, remaining: target - total, currency: defaultCurrency };
+  const unlimited = Boolean(trip.budgetUnlimited);
+  const target = unlimited ? 0 : parseNumber(trip.budget);
+  return { plannedRows, expenseRows, plannedTotal, expenseTotal, paidTotal, total, target, unlimited, remaining: unlimited ? null : target - total, currency: defaultCurrency };
 }
 
 function renderBudgetSourceRows(rows, fallbackCurrency, emptyText = "尚無自動加總項目") {
@@ -775,8 +783,8 @@ function renderBudgetOverviewPanel(trip) {
           <div class="stat-label">自動加總</div>
           <div class="stat-value">${currency(summary.total, summary.currency)}</div>
           <div class="stat-note">已規劃 ${currency(summary.plannedTotal, summary.currency)}｜支出紀錄 ${currency(summary.expenseTotal, summary.currency)}</div>
-          <div class="progress"><span style="width:${usagePct}%"></span></div>
-          <div class="stat-note">目標 ${currency(summary.target, summary.currency)}｜剩餘 ${currency(summary.remaining, summary.currency)}</div>
+          ${summary.unlimited ? `<div class="budget-unlimited-line">∞ 無預算限制</div>` : `<div class="progress"><span style="width:${usagePct}%"></span></div>`}
+          <div class="stat-note">${summary.unlimited ? "目前僅追蹤與加總花費，不設定上限" : `目標 ${currency(summary.target, summary.currency)}｜剩餘 ${currency(summary.remaining, summary.currency)}`}</div>
         </div>
         <div class="list compact-list">
           ${renderBudgetSourceRows(previewRows, summary.currency, "尚無預算項目")}
@@ -861,7 +869,7 @@ function renderDashboard(trip) {
               <div class="next-focus-time">${escapeHtml(nextItem.startTime || "時間未定")}</div>
               <div class="next-focus-copy">
                 <h2>${escapeHtml(nextItem.title)}</h2>
-                <p>${escapeHtml(nextItem.placeName || nextItem.address || "地點未填")}</p>
+                <p>${escapeHtml(nextItem.address || "地址未填")}</p>
               </div>
               <button class="round-arrow" data-view="itinerary" aria-label="查看行程">›</button>
             </div>` : emptyBlock("還沒有行程", "新增第一個景點、餐廳或活動。")}
@@ -887,9 +895,9 @@ function renderDashboard(trip) {
           <div class="simple-budget-copy">
             <span>已規劃與支出</span>
             <strong>${currency(budgetSummary.total, budgetSummary.currency)}</strong>
-            <small>總預算 ${currency(budgetSummary.target, budgetSummary.currency)}・剩餘 ${currency(budgetSummary.remaining, budgetSummary.currency)}</small>
+            <small>${budgetSummary.unlimited ? "無預算限制・僅追蹤目前花費" : `總預算 ${currency(budgetSummary.target, budgetSummary.currency)}・剩餘 ${currency(budgetSummary.remaining, budgetSummary.currency)}`}</small>
           </div>
-          ${progressRingSvg(usagePct)}
+          ${budgetSummary.unlimited ? `<div class="budget-ring budget-ring-unlimited" aria-label="無預算限制"><strong>∞</strong></div>` : progressRingSvg(usagePct)}
         </div>
         <button class="text-link-button" data-view="budget">查看預算明細 →</button>
       </section>
@@ -907,7 +915,7 @@ function renderItemPreview(item) {
       <div class="item-row">
         <div>
           <div class="item-title">${escapeHtml(item.startTime || "時間未定")}｜${escapeHtml(item.title)}</div>
-          <div class="item-meta">${formatDateLong(item.date)}｜${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+          <div class="item-meta">${formatDateLong(item.date)}｜${escapeHtml(item.address || "地址未填")}</div>
         </div>
         <div class="badges"><span class="badge dark">${escapeHtml(item.type || "行程")}</span></div>
       </div>
@@ -1067,7 +1075,7 @@ function renderTimelineItem(item) {
             <div class="item-row simplified-item-head">
               <div class="simplified-item-copy">
                 <div class="item-title">${escapeHtml(item.title)}</div>
-                <div class="item-meta">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+                <div class="item-meta">${escapeHtml(item.address || "地址未填")}</div>
               </div>
               <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}" aria-label="${expanded ? "收合資訊" : "展開更多資訊"}">${iconSvg("more", "more-dots-svg")}</button>
             </div>
@@ -1154,10 +1162,9 @@ function renderPrintItineraryItem(item, currencyCode) {
       <div class="print-entry-time">${escapeHtml(time)}</div>
       <div class="print-entry-body">
         <h3>${escapeHtml(item.title || "未命名行程")}</h3>
-        <div class="print-place">${escapeHtml(item.placeName || item.address || "地點未填")}</div>
+        <div class="print-place">${escapeHtml(item.address || "地址未填")}</div>
         ${details.length ? `<div class="print-tags">${details.map((text) => `<span>${escapeHtml(text)}</span>`).join("")}</div>` : ""}
         ${printDetail("地址", item.address)}
-        ${printDetail("預約 / 訂位", item.reservationNumber)}
         ${item.notes ? `<p class="print-notes">${escapeHtml(item.notes)}</p>` : ""}
       </div>
     </article>`;
@@ -1285,7 +1292,7 @@ function renderFlights(trip) {
   return renderCollectionPage({
     eyebrow: "Flights",
     title: "航班",
-    subtitle: "記錄航班編號、訂位代號、機場、航廈、座位、行李額度、票價與備註。",
+    subtitle: "記錄航班編號、訂位代號、機場、艙等、行李額度、票價與備註。",
     action: "new-flight",
     actionLabel: "＋ 新增航班",
     items,
@@ -1309,14 +1316,12 @@ function renderFlightCard(item) {
         <span class="badge blue">出發 ${formatDateTime(item.departure)}</span>
         <span class="badge green">抵達 ${formatDateTime(item.arrival)}</span>
         ${item.syncToItinerary !== false && splitLocalDateTime(item.departure).date ? `<span class="badge">已加入每日行程</span>` : ""}
-        <span class="badge">座位 ${escapeHtml(item.seat || "未選")}</span>
         <span class="badge amber">${escapeHtml(item.checkedBaggage || "行李未填")}</span>
       </div>
       <dl class="kv">
         <dt>PNR</dt><dd>${escapeHtml(item.bookingRef || "未填")}</dd>
-        <dt>航廈 / Gate</dt><dd>${escapeHtml(item.terminal || "未填")} / ${escapeHtml(item.gate || "未填")}</dd>
         <dt>艙等</dt><dd>${escapeHtml(item.cabin || "未填")}</dd>
-        <dt>價格</dt><dd>${currency(item.price, activeTrip().currency || "TWD")}</dd>
+        <dt>價格</dt><dd>${parseNumber(item.price) ? currency(item.price, activeTrip().currency || "TWD") : "未填"}</dd>
       </dl>
       ${item.notes ? `<div class="item-meta">${escapeHtml(item.notes)}</div>` : ""}
     </article>
@@ -1447,12 +1452,12 @@ function renderBudget(trip) {
   const summary = getBudgetSummary(trip);
   const grouped = groupBy([...summary.plannedRows, ...summary.expenseRows], "category");
   return `
-    ${topbar({ eyebrow: "Budget", title: "預算與支出", subtitle: `自動加總 ${currency(summary.total, trip.currency || "TWD")}，目標預算 ${currency(trip.budget, trip.currency || "TWD")}。`, actions: `<button class="btn primary" data-action="new-expense">＋ 新增支出</button>` })}
+    ${topbar({ eyebrow: "Budget", title: "預算與支出", subtitle: summary.unlimited ? `自動加總 ${currency(summary.total, trip.currency || "TWD")}，目前設定為無預算限制。` : `自動加總 ${currency(summary.total, trip.currency || "TWD")}，目標預算 ${currency(trip.budget, trip.currency || "TWD")}。`, actions: `<button class="btn primary" data-action="new-expense">＋ 新增支出</button>` })}
     <section class="grid four">
       ${statCard("自動加總", currency(summary.total, trip.currency || "TWD"), "所有模組金額合計")}
       ${statCard("已規劃", currency(summary.plannedTotal, trip.currency || "TWD"), "航班、住宿、行程、交通、文件")}
       ${statCard("支出紀錄", currency(summary.expenseTotal, trip.currency || "TWD"), "預算頁手動新增")}
-      ${statCard("剩餘預算", currency(summary.remaining, trip.currency || "TWD"), "目標扣除自動加總")}
+      ${summary.unlimited ? statCard("預算限制", "無上限", "僅追蹤與加總花費") : statCard("剩餘預算", currency(summary.remaining, trip.currency || "TWD"), "目標扣除自動加總")}
     </section>
     <section class="section grid two">
       <div class="card">
@@ -1878,25 +1883,51 @@ const fieldOptions = {
 
 
 const AIRPORT_SUGGESTIONS = [
-  "TPE 台北桃園 Taoyuan", "TSA 台北松山 Songshan", "KHH 高雄 Kaohsiung", "RMQ 台中 Taichung",
-  "NRT 東京成田 Narita", "HND 東京羽田 Haneda", "KIX 大阪關西 Kansai", "FUK 福岡 Fukuoka", "CTS 札幌新千歲 New Chitose", "OKA 沖繩那霸 Naha",
-  "ICN 首爾仁川 Incheon", "GMP 首爾金浦 Gimpo", "PUS 釜山金海 Busan",
-  "HKG 香港 Hong Kong", "MFM 澳門 Macau", "SIN 新加坡 Changi", "BKK 曼谷素萬那普 Suvarnabhumi", "DMK 曼谷廊曼 Don Mueang", "KUL 吉隆坡 Kuala Lumpur", "DPS 峇里島 Denpasar",
-  "SGN 胡志明 Tan Son Nhat", "HAN 河內 Noi Bai", "DAD 峴港 Da Nang", "MNL 馬尼拉 Manila", "CEB 宿霧 Cebu",
-  "DXB 杜拜 Dubai", "AUH 阿布達比 Abu Dhabi", "DOH 杜哈 Doha", "IST 伊斯坦堡 Istanbul",
-  "CDG 巴黎戴高樂 Charles de Gaulle", "ORY 巴黎奧利 Orly", "LHR 倫敦希斯洛 Heathrow", "LGW 倫敦蓋威克 Gatwick", "AMS 阿姆斯特丹 Schiphol", "FRA 法蘭克福 Frankfurt", "MUC 慕尼黑 Munich", "ZRH 蘇黎世 Zurich", "VIE 維也納 Vienna", "FCO 羅馬 Fiumicino", "MXP 米蘭 Malpensa", "MAD 馬德里 Madrid", "BCN 巴塞隆納 Barcelona", "LIS 里斯本 Lisbon",
-  "JFK 紐約甘迺迪 JFK", "EWR 紐約紐華克 Newark", "LAX 洛杉磯 Los Angeles", "SFO 舊金山 San Francisco", "SEA 西雅圖 Seattle", "ORD 芝加哥 O'Hare", "DFW 達拉斯 Dallas", "ATL 亞特蘭大 Atlanta", "YVR 溫哥華 Vancouver", "YYZ 多倫多 Toronto"
+  // 台灣與離島
+  "TPE 台北桃園 Taoyuan", "TSA 台北松山 Songshan", "KHH 高雄 Kaohsiung", "RMQ 台中 Taichung", "TNN 台南 Tainan", "HUN 花蓮 Hualien", "TTT 台東 Taitung", "MZG 澎湖馬公 Penghu", "KNH 金門 Kinmen", "MFK 馬祖北竿 Beigan", "LZN 馬祖南竿 Nangan",
+  // 日本
+  "NRT 東京成田 Narita", "HND 東京羽田 Haneda", "KIX 大阪關西 Kansai", "ITM 大阪伊丹 Itami", "UKB 神戶 Kobe", "NGO 名古屋中部 Chubu Centrair", "FUK 福岡 Fukuoka", "CTS 札幌新千歲 New Chitose", "OKA 沖繩那霸 Naha", "SDJ 仙台 Sendai", "HIJ 廣島 Hiroshima", "KOJ 鹿兒島 Kagoshima", "KMJ 熊本 Kumamoto", "MYJ 松山 Matsuyama", "KMQ 小松 Kanazawa Komatsu", "TAK 高松 Takamatsu", "KMI 宮崎 Miyazaki", "OIT 大分 Oita", "NGS 長崎 Nagasaki", "KIJ 新潟 Niigata", "HKD 函館 Hakodate", "ASJ 奄美大島 Amami", "ISG 石垣 Ishigaki", "MMY 宮古島 Miyakojima",
+  // 韓國
+  "ICN 首爾仁川 Incheon", "GMP 首爾金浦 Gimpo", "PUS 釜山金海 Gimhae", "CJU 濟州 Jeju", "TAE 大邱 Daegu", "CJJ 清州 Cheongju", "MWX 務安 Muan", "YNY 襄陽 Yangyang",
+  // 香港、澳門與中國主要城市
+  "HKG 香港 Hong Kong", "MFM 澳門 Macau", "PEK 北京首都 Beijing Capital", "PKX 北京大興 Beijing Daxing", "PVG 上海浦東 Shanghai Pudong", "SHA 上海虹橋 Shanghai Hongqiao", "CAN 廣州白雲 Guangzhou", "SZX 深圳寶安 Shenzhen", "CTU 成都雙流 Chengdu Shuangliu", "TFU 成都天府 Chengdu Tianfu", "CKG 重慶江北 Chongqing", "XIY 西安咸陽 Xi'an", "HGH 杭州蕭山 Hangzhou", "NKG 南京祿口 Nanjing", "XMN 廈門高崎 Xiamen", "TAO 青島膠東 Qingdao", "WUH 武漢天河 Wuhan", "CSX 長沙黃花 Changsha", "KMG 昆明長水 Kunming", "TSN 天津濱海 Tianjin", "DLC 大連周水子 Dalian", "HRB 哈爾濱太平 Harbin", "SHE 瀋陽桃仙 Shenyang", "SYX 三亞鳳凰 Sanya", "FOC 福州長樂 Fuzhou", "WNZ 溫州龍灣 Wenzhou", "NGB 寧波櫟社 Ningbo", "URC 烏魯木齊地窩堡 Urumqi",
+  // 東南亞
+  "SIN 新加坡樟宜 Changi", "BKK 曼谷素萬那普 Suvarnabhumi", "DMK 曼谷廊曼 Don Mueang", "CNX 清邁 Chiang Mai", "HKT 普吉 Phuket", "KBV 喀比 Krabi", "USM 蘇梅島 Koh Samui", "KUL 吉隆坡 Kuala Lumpur", "SZB 吉隆坡梳邦 Subang", "PEN 檳城 Penang", "BKI 沙巴亞庇 Kota Kinabalu", "JHB 新山 Johor Bahru", "LGK 蘭卡威 Langkawi", "DPS 峇里島 Denpasar", "CGK 雅加達 Soekarno-Hatta", "SUB 泗水 Surabaya", "YIA 日惹 Yogyakarta", "LOP 龍目島 Lombok", "SGN 胡志明市 Tan Son Nhat", "HAN 河內 Noi Bai", "DAD 峴港 Da Nang", "CXR 芽莊 Cam Ranh", "PQC 富國島 Phu Quoc", "MNL 馬尼拉 Manila", "CEB 宿霧 Cebu", "CRK 克拉克 Clark", "KLO 長灘島卡利波 Kalibo", "MPH 長灘島卡提克蘭 Caticlan", "PPS 公主港 Puerto Princesa", "BWN 汶萊 Bandar Seri Begawan", "PNH 金邊 Phnom Penh", "SAI 暹粒吳哥 Siem Reap", "VTE 永珍 Vientiane", "LPQ 龍坡邦 Luang Prabang", "RGN 仰光 Yangon", "MDL 曼德勒 Mandalay",
+  // 南亞與印度洋
+  "DEL 德里 Indira Gandhi", "BOM 孟買 Mumbai", "BLR 班加羅爾 Bengaluru", "MAA 清奈 Chennai", "CCU 加爾各答 Kolkata", "HYD 海德拉巴 Hyderabad", "CMB 可倫坡 Colombo", "KTM 加德滿都 Kathmandu", "MLE 馬爾地夫 Male",
+  // 中東
+  "DXB 杜拜 Dubai", "AUH 阿布達比 Abu Dhabi", "DOH 杜哈 Doha", "IST 伊斯坦堡 Istanbul", "SAW 伊斯坦堡薩比哈 Sabiha Gokcen", "TLV 特拉維夫 Ben Gurion", "AMM 安曼 Queen Alia", "RUH 利雅德 Riyadh", "JED 吉達 Jeddah",
+  // 歐洲
+  "CDG 巴黎戴高樂 Charles de Gaulle", "ORY 巴黎奧利 Orly", "LHR 倫敦希斯洛 Heathrow", "LGW 倫敦蓋威克 Gatwick", "STN 倫敦史坦斯特 Stansted", "MAN 曼徹斯特 Manchester", "EDI 愛丁堡 Edinburgh", "AMS 阿姆斯特丹 Schiphol", "BRU 布魯塞爾 Brussels", "FRA 法蘭克福 Frankfurt", "MUC 慕尼黑 Munich", "BER 柏林 Brandenburg", "ZRH 蘇黎世 Zurich", "GVA 日內瓦 Geneva", "VIE 維也納 Vienna", "PRG 布拉格 Prague", "BUD 布達佩斯 Budapest", "WAW 華沙 Warsaw", "CPH 哥本哈根 Copenhagen", "ARN 斯德哥爾摩 Arlanda", "OSL 奧斯陸 Oslo", "HEL 赫爾辛基 Helsinki", "FCO 羅馬 Fiumicino", "CIA 羅馬 Ciampino", "MXP 米蘭 Malpensa", "LIN 米蘭 Linate", "VCE 威尼斯 Venice", "MAD 馬德里 Madrid", "BCN 巴塞隆納 Barcelona", "LIS 里斯本 Lisbon", "OPO 波多 Porto", "ATH 雅典 Athens", "DUB 都柏林 Dublin",
+  // 北美、中南美與太平洋
+  "JFK 紐約甘迺迪 JFK", "EWR 紐約紐華克 Newark", "LGA 紐約拉瓜地亞 LaGuardia", "BOS 波士頓 Boston", "IAD 華盛頓杜勒斯 Dulles", "MIA 邁阿密 Miami", "MCO 奧蘭多 Orlando", "ATL 亞特蘭大 Atlanta", "ORD 芝加哥 O'Hare", "DFW 達拉斯 Dallas", "IAH 休士頓 Houston", "LAX 洛杉磯 Los Angeles", "SFO 舊金山 San Francisco", "SJC 聖荷西 San Jose", "SEA 西雅圖 Seattle", "LAS 拉斯維加斯 Las Vegas", "HNL 夏威夷檀香山 Honolulu", "GUM 關島 Guam", "ANC 阿拉斯加安克拉治 Anchorage", "YVR 溫哥華 Vancouver", "YYZ 多倫多 Toronto", "YUL 蒙特婁 Montreal", "MEX 墨西哥城 Mexico City", "CUN 坎昆 Cancun", "GRU 聖保羅 Guarulhos", "EZE 布宜諾斯艾利斯 Ezeiza", "SCL 聖地牙哥 Santiago",
+  // 澳洲、紐西蘭與大洋洲
+  "SYD 雪梨 Sydney", "MEL 墨爾本 Melbourne", "BNE 布里斯本 Brisbane", "PER 伯斯 Perth", "ADL 阿德雷德 Adelaide", "AKL 奧克蘭 Auckland", "CHC 基督城 Christchurch", "NAN 斐濟楠迪 Nadi", "PPT 大溪地 Papeete",
+  // 非洲常見轉機與旅遊城市
+  "CAI 開羅 Cairo", "JNB 約翰尼斯堡 Johannesburg", "CPT 開普敦 Cape Town", "NBO 奈洛比 Nairobi", "ADD 阿迪斯阿貝巴 Addis Ababa", "CMN 卡薩布蘭卡 Casablanca"
 ];
 
 const AIRLINE_SUGGESTIONS = [
-  "EVA Air 長榮航空", "China Airlines 中華航空", "STARLUX 星宇航空", "Cathay Pacific 國泰航空", "HK Express 香港快運",
-  "Japan Airlines 日本航空 JAL", "ANA 全日空", "Peach 樂桃航空", "Jetstar 捷星航空",
-  "Korean Air 大韓航空", "Asiana 韓亞航空", "Jeju Air 濟州航空", "T'way 德威航空", "Jin Air 真航空",
-  "Singapore Airlines 新加坡航空", "Scoot 酷航", "Thai Airways 泰國航空", "AirAsia 亞洲航空", "Malaysia Airlines 馬來西亞航空",
-  "Vietnam Airlines 越南航空", "VietJet Air 越捷航空",
-  "Emirates 阿聯酋航空", "Qatar Airways 卡達航空", "Etihad Airways 阿提哈德航空", "Turkish Airlines 土耳其航空",
-  "Air France 法國航空", "KLM 荷蘭皇家航空", "Lufthansa 漢莎航空", "Swiss 瑞士航空", "British Airways 英國航空",
-  "United Airlines 聯合航空", "Delta Air Lines 達美航空", "American Airlines 美國航空", "Air Canada 加拿大航空", "Qantas 澳洲航空"
+  // 台灣
+  "China Airlines 中華航空 CI", "Mandarin Airlines 華信航空 AE", "EVA Air 長榮航空 BR", "UNI Air 立榮航空 B7", "STARLUX Airlines 星宇航空 JX", "Tigerair Taiwan 台灣虎航 IT", "Daily Air 德安航空 DA",
+  // 日本傳統航空、區域航空與廉價航空
+  "Japan Airlines 日本航空 JAL JL", "ANA 全日空 All Nippon Airways NH", "Japan Transocean Air 日本越洋航空 NU", "Air Japan NQ", "ZIPAIR Tokyo ZG", "Peach Aviation 樂桃航空 MM", "Jetstar Japan 日本捷星 GK", "Spring Japan 春秋航空日本 IJ", "Skymark Airlines 天馬航空 BC", "Air Do 北海道航空 HD", "Solaseed Air 空之子航空 6J", "StarFlyer 星悅航空 7G", "Fuji Dream Airlines 富士夢幻航空 JH", "IBEX Airlines FW", "Oriental Air Bridge 東方空橋 OC", "Amakusa Airlines 天草航空 MZ",
+  // 韓國傳統航空與廉價航空
+  "Korean Air 大韓航空 KE", "Asiana Airlines 韓亞航空 OZ", "Jeju Air 濟州航空 7C", "Jin Air 真航空 LJ", "T'way Air 德威航空 TW", "Air Busan 釜山航空 BX", "Air Seoul 首爾航空 RS", "Eastar Jet 易斯達航空 ZE", "Aero K 航空 RF", "Air Premia 普萊米婭航空 YP",
+  // 香港、澳門與中國
+  "Cathay Pacific 國泰航空 CX", "Hong Kong Airlines 香港航空 HX", "HK Express 香港快運 UO", "Greater Bay Airlines 大灣區航空 HB", "Air Macau 澳門航空 NX", "Air China 中國國際航空 CA", "China Eastern 中國東方航空 MU", "China Southern 中國南方航空 CZ", "Hainan Airlines 海南航空 HU", "XiamenAir 廈門航空 MF", "Sichuan Airlines 四川航空 3U", "Shenzhen Airlines 深圳航空 ZH", "Shandong Airlines 山東航空 SC", "Juneyao Air 吉祥航空 HO", "Spring Airlines 春秋航空 9C", "Beijing Capital Airlines 首都航空 JD", "Tianjin Airlines 天津航空 GS", "West Air 西部航空 PN", "Lucky Air 祥鵬航空 8L", "Chengdu Airlines 成都航空 EU", "Hebei Airlines 河北航空 NS", "Qingdao Airlines 青島航空 QW",
+  // 東南亞
+  "Singapore Airlines 新加坡航空 SQ", "Scoot 酷航 TR", "Malaysia Airlines 馬來西亞航空 MH", "AirAsia 亞洲航空 AK", "AirAsia X 全亞洲航空 D7", "Batik Air Malaysia 馬印航空 OD", "Firefly FY", "Thai Airways 泰國航空 TG", "Thai AirAsia 泰國亞洲航空 FD", "Thai AirAsia X XJ", "Bangkok Airways 曼谷航空 PG", "Thai Lion Air 泰國獅航 SL", "Nok Air 鳥航 DD", "Vietnam Airlines 越南航空 VN", "VietJet Air 越捷航空 VJ", "Bamboo Airways 越竹航空 QH", "Vietravel Airlines 越旅航空 VU", "Philippine Airlines 菲律賓航空 PR", "Cebu Pacific 宿霧太平洋航空 5J", "AirAsia Philippines Z2", "Garuda Indonesia 印尼鷹航 GA", "Citilink 印尼連城航空 QG", "Lion Air 獅子航空 JT", "Batik Air 峇迪航空 ID", "Super Air Jet IU", "Pelita Air IP", "TransNusa 8B", "Royal Brunei Airlines 汶萊皇家航空 BI", "Cambodia Angkor Air 柬埔寨吳哥航空 K6", "Lao Airlines 寮國航空 QV", "Myanmar Airways International 8M",
+  // 南亞
+  "Air India 印度航空 AI", "IndiGo 6E", "Air India Express IX", "Akasa Air QP", "SpiceJet SG", "SriLankan Airlines 斯里蘭卡航空 UL", "Nepal Airlines 尼泊爾航空 RA", "Himalaya Airlines 喜馬拉雅航空 H9", "Drukair 不丹皇家航空 KB", "Maldivian Q2",
+  // 中東
+  "Emirates 阿聯酋航空 EK", "Qatar Airways 卡達航空 QR", "Etihad Airways 阿提哈德航空 EY", "Turkish Airlines 土耳其航空 TK", "flydubai 杜拜航空 FZ", "Air Arabia 阿拉伯航空 G9", "Oman Air 阿曼航空 WY", "Gulf Air 海灣航空 GF", "Kuwait Airways 科威特航空 KU", "Saudia 沙烏地阿拉伯航空 SV", "flynas 納斯航空 XY", "Royal Jordanian 皇家約旦航空 RJ", "EL AL 以色列航空 LY",
+  // 歐洲
+  "Air France 法國航空 AF", "KLM 荷蘭皇家航空 KL", "Lufthansa 漢莎航空 LH", "SWISS 瑞士國際航空 LX", "Austrian Airlines 奧地利航空 OS", "Brussels Airlines 布魯塞爾航空 SN", "British Airways 英國航空 BA", "Iberia 西班牙國家航空 IB", "Vueling 伏林航空 VY", "Ryanair 瑞安航空 FR", "easyJet 易捷航空 U2", "Wizz Air 威茲航空 W6", "Norwegian 挪威航空 DY", "SAS 北歐航空 SK", "Finnair 芬蘭航空 AY", "Icelandair 冰島航空 FI", "TAP Air Portugal 葡萄牙航空 TP", "ITA Airways 義大利航空 AZ", "Aegean Airlines 愛琴海航空 A3", "LOT Polish Airlines 波蘭航空 LO", "Eurowings 歐洲之翼 EW", "Condor 神鷹航空 DE",
+  // 北美與拉丁美洲
+  "United Airlines 聯合航空 UA", "Delta Air Lines 達美航空 DL", "American Airlines 美國航空 AA", "Air Canada 加拿大航空 AC", "WestJet 西捷航空 WS", "Alaska Airlines 阿拉斯加航空 AS", "JetBlue 捷藍航空 B6", "Southwest Airlines 西南航空 WN", "Spirit Airlines 精神航空 NK", "Frontier Airlines 邊疆航空 F9", "Hawaiian Airlines 夏威夷航空 HA", "Aeromexico 墨西哥航空 AM", "Avianca 哥倫比亞航空 AV", "Copa Airlines 巴拿馬航空 CM", "LATAM Airlines 南美航空 LA", "GOL Airlines 高爾航空 G3", "Azul Brazilian Airlines 藍色巴西航空 AD",
+  // 澳洲、紐西蘭與非洲
+  "Qantas 澳洲航空 QF", "Jetstar Airways 捷星航空 JQ", "Virgin Australia 維珍澳洲航空 VA", "Air New Zealand 紐西蘭航空 NZ", "Fiji Airways 斐濟航空 FJ", "Ethiopian Airlines 衣索比亞航空 ET", "Kenya Airways 肯亞航空 KQ", "EgyptAir 埃及航空 MS", "South African Airways 南非航空 SA", "Royal Air Maroc 摩洛哥皇家航空 AT"
 ];
 
 function openTripForm(id) {
@@ -1905,11 +1936,11 @@ function openTripForm(id) {
     title: item ? "編輯旅程" : "新增旅程",
     fields: [
       text("name", "旅程名稱", true), text("destination", "目的地"), dateField("startDate", "開始日期", true), dateField("endDate", "結束日期", true),
-      selectField("status", "狀態", fieldOptions.statusTrip), numberField("budget", "預算"), selectField("currency", "主幣別", fieldOptions.currency), text("travelers", "旅伴"),
+      selectField("status", "狀態", fieldOptions.statusTrip), checkboxField("budgetUnlimited", "無預算限制", true), numberField("budget", "預算上限"), selectField("currency", "主幣別", fieldOptions.currency), text("travelers", "旅伴"),
       rangeField("progressFlights", "航班完成度"), rangeField("progressStays", "住宿完成度"), rangeField("progressItinerary", "行程完成度"), rangeField("progressTransport", "交通完成度"), rangeField("progressDocuments", "文件完成度"), rangeField("progressPacking", "行李完成度"),
       textarea("note", "旅程備註", true)
     ],
-    item: item || { currency: "TWD", status: "規劃中", progressFlights: 0, progressStays: 0, progressItinerary: 0, progressTransport: 0, progressDocuments: 0, progressPacking: 0 },
+    item: item || { currency: "TWD", status: "規劃中", budgetUnlimited: false, progressFlights: 0, progressStays: 0, progressItinerary: 0, progressTransport: 0, progressDocuments: 0, progressPacking: 0 },
     onSubmit: (data) => {
       if (item) Object.assign(item, data);
       else {
@@ -1928,9 +1959,9 @@ function openItineraryForm(id, defaultDate) {
     title: item ? "編輯行程" : "新增行程",
     fields: [
       dateField("date", "日期", true), timeField("startTime", "開始時間"), timeField("endTime", "結束時間"), selectField("type", "類型", fieldOptions.itineraryType),
-      text("title", "行程名稱", true), text("placeName", "地點名稱"), text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
+      text("title", "行程名稱", true), text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
       text("openingHours", "營業時間"), text("lastEntry", "最後入場"), selectField("ticketRequired", "是否需門票", fieldOptions.yesNo), selectField("ticketStatus", "門票狀態", fieldOptions.ticketStatus),
-      numberField("ticketPrice", "門票價格"), urlField("ticketLink", "購票 / 票券連結"), text("reservationNumber", "預約 / 訂位編號"), numberField("budget", "預估花費"),
+      numberField("ticketPrice", "門票價格"), urlField("ticketLink", "購票 / 票券連結"), numberField("budget", "預估花費"),
       selectField("status", "狀態", fieldOptions.itemStatus), selectField("priority", "重要性", fieldOptions.priority), selectField("weatherType", "天氣條件", fieldOptions.weather), textarea("notes", "備註", true)
     ],
     item: item || { date: defaultDate || activeTrip().startDate || todayISO(), type: "景點", ticketRequired: "否", ticketStatus: "不需", status: "想去", priority: "可去", weatherType: "室內" },
@@ -1963,7 +1994,7 @@ function openFlightForm(id) {
     fields: [
       selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), datalistField("airline", "航空公司", AIRLINE_SUGGESTIONS, false, true), text("flightNumber", "航班編號", false, true), text("bookingRef", "訂位代號 / PNR"),
       datalistField("fromAirport", "出發機場", AIRPORT_SUGGESTIONS, false, true), datalistField("toAirport", "抵達機場", AIRPORT_SUGGESTIONS, false, true), datetimeField("departure", "出發時間"), datetimeField("arrival", "抵達時間"),
-      text("terminal", "航廈"), text("gate", "登機門"), text("seat", "座位"), text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"),
+      text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"),
       checkboxField("syncToItinerary", "自動加入每日行程", true), textarea("notes", "備註", true)
     ],
     item: item || { type: "去程", cabin: "Economy", syncToItinerary: true },
@@ -2108,6 +2139,16 @@ function openForm({ title, fields, item, onSubmit }) {
 
   modalRoot.querySelectorAll("[data-action='close-modal']").forEach((el) => el.addEventListener("click", closeModal));
   const form = modalRoot.querySelector(`#${formId}`);
+  const updateBudgetLimitState = () => {
+    const unlimitedInput = form.elements.budgetUnlimited;
+    const budgetInput = form.elements.budget;
+    if (!unlimitedInput || !budgetInput) return;
+    budgetInput.disabled = unlimitedInput.checked;
+    budgetInput.closest(".field")?.classList.toggle("is-disabled", unlimitedInput.checked);
+    budgetInput.placeholder = unlimitedInput.checked ? "已設定為無預算限制" : "";
+  };
+  form.elements.budgetUnlimited?.addEventListener("change", updateBudgetLimitState);
+  updateBudgetLimitState();
   modalRoot.querySelectorAll("input[type='range']").forEach((input) => {
     input.addEventListener("input", () => {
       const output = modalRoot.querySelector(`[data-range-value="${input.name}"]`);
@@ -2276,7 +2317,6 @@ function placeToItinerary(id) {
   const form = modalRoot.querySelector("form");
   if (form) {
     form.elements.title.value = place.name || "";
-    form.elements.placeName.value = place.name || "";
     form.elements.type.value = place.type || "景點";
     form.elements.address.value = place.address || "";
     form.elements.mapUrl.value = place.mapUrl || "";
