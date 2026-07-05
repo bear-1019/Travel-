@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripboard-v2.7.3-home-icon";
+const CACHE_NAME = "tripboard-v2.7.4-home-icon-fullbleed";
 const ASSETS = [
   "./",
   "./index.html",
