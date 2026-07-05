@@ -3048,3 +3048,79 @@ h3 {
   mask-size: contain;
   transform: translate(0.75px, -0.25px);
 }
+
+/* =========================================================
+   TripBoard 2.7.9 — structured transport duration picker
+   ========================================================= */
+.duration-field {
+  gap: 9px;
+}
+
+.duration-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.duration-select-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 14px 0 0;
+  border: 1px solid var(--theme-line, var(--line));
+  border-radius: 16px;
+  background: var(--theme-input-bg, #fffdf9);
+  overflow: hidden;
+}
+
+.duration-select-wrap select {
+  width: 100%;
+  min-width: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-right: 34px;
+  text-align: center;
+  font-size: 1rem;
+  font-family: var(--number-serif);
+  color: var(--theme-text-strong, var(--ink));
+}
+
+.duration-select-wrap span {
+  white-space: nowrap;
+  color: var(--theme-muted, var(--muted));
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.duration-select-wrap:focus-within {
+  border-color: var(--theme-accent, var(--navy));
+  box-shadow: 0 0 0 3px var(--theme-focus-ring, rgba(21, 39, 70, 0.11));
+}
+
+.duration-preview {
+  display: block;
+  min-height: 1.4em;
+  color: var(--theme-muted, var(--muted)) !important;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 420px) {
+  .duration-picker {
+    gap: 9px;
+  }
+
+  .duration-select-wrap {
+    gap: 6px;
+    padding-right: 10px;
+  }
+
+  .duration-select-wrap select {
+    padding-left: 10px;
+    padding-right: 28px;
+  }
+}

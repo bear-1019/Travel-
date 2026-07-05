@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.7.5-sync-spacing";
+const APP_VERSION = "2.7.9-transport-duration";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -207,10 +207,62 @@ function addMinutesToTime(time, minutes) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
+function parseDurationText(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return 0;
+
+  const clockMatch = text.match(/^(\d+)\s*:\s*(\d{1,2})$/);
+  if (clockMatch) return Math.max(0, Number(clockMatch[1]) * 60 + Number(clockMatch[2]));
+
+  const hourMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:小時|小时|時|时|hours?|hrs?|h)(?![a-z])/i);
+  const minuteMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:分鐘|分钟|分|minutes?|mins?|min|m)(?![a-z])/i);
+
+  let total = 0;
+  if (hourMatch) total += Math.round(Number(hourMatch[1]) * 60);
+  if (minuteMatch) total += Math.round(Number(minuteMatch[1]));
+  if (total > 0) return total;
+
+  const plainNumber = text.match(/\d+(?:\.\d+)?/);
+  return plainNumber ? Math.max(0, Math.round(Number(plainNumber[0]))) : 0;
+}
+
+function getTransportDurationMinutes(item = {}) {
+  const storedTotal = Number(item.durationTotalMinutes);
+  if (Number.isFinite(storedTotal) && storedTotal > 0) return Math.round(storedTotal);
+
+  const hours = Number(item.durationHours);
+  const minutes = Number(item.durationMinutes);
+  if ((Number.isFinite(hours) || Number.isFinite(minutes)) && ((hours || 0) * 60 + (minutes || 0)) > 0) {
+    return Math.max(0, Math.round((hours || 0) * 60 + (minutes || 0)));
+  }
+
+  return parseDurationText(item.duration);
+}
+
+function durationPartsFromItem(item = {}) {
+  const total = getTransportDurationMinutes(item);
+  if (total > 0) return { hours: Math.floor(total / 60), minutes: total % 60 };
+  return { hours: 0, minutes: 1 };
+}
+
+function formatTransportDuration(totalMinutes) {
+  const total = Math.max(0, Math.round(Number(totalMinutes) || 0));
+  if (!total) return "";
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours && minutes) return `${hours} 小時 ${minutes} 分鐘`;
+  if (hours) return `${hours} 小時`;
+  return `${minutes} 分鐘`;
+}
+
+function transportDurationLabel(item) {
+  return formatTransportDuration(getTransportDurationMinutes(item)) || String(item?.duration || "").trim();
+}
+
 function inferTransportEndTime(item) {
-  const match = String(item.duration || "").match(/(\d+)/);
-  if (!match) return "";
-  return addMinutesToTime(item.startTime, Number(match[1]));
+  const totalMinutes = getTransportDurationMinutes(item);
+  if (!totalMinutes) return "";
+  return addMinutesToTime(item.startTime, totalMinutes);
 }
 
 function resolveFocusedDate(days, items) {
@@ -981,7 +1033,7 @@ function renderTransportInline(item) {
       <div class="transport-inline slim-transport-row">
         <div class="transport-inline-main">
           <span class="transport-icon">${iconSvg(item.method === "步行" ? "route" : item.method === "飛機" ? "plane" : item.method === "火車" || item.method === "地鐵" || item.method === "高鐵" ? "station" : "route", "transport-method-svg")}</span>
-          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${item.duration ? `・${escapeHtml(item.duration)}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+          <span><strong>${escapeHtml(item.method || "交通")}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
         </div>
         <div class="transport-inline-actions">
           <button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button>
@@ -1036,7 +1088,7 @@ function renderPrintTransport(item) {
       <div class="print-entry-time">${escapeHtml(time)}</div>
       <div class="print-entry-body">
         <div class="print-transport-title">${escapeHtml(item.method || "交通")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
-        <div class="print-place">${escapeHtml(item.duration || "時間未填")}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
+        <div class="print-place">${escapeHtml(transportDurationLabel(item) || "時間未填")}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
         ${printDetail("路線", item.route)}
         ${printDetail("轉乘", item.transferInfo)}
         ${printDetail("備案", item.backup)}
@@ -1124,7 +1176,7 @@ function renderTransportCard(item) {
       </div>
       <div class="badges">
         <span class="badge dark">${escapeHtml(item.method || "交通")}</span>
-        <span class="badge blue">${escapeHtml(item.duration || "時間未填")}</span>
+        <span class="badge blue">${escapeHtml(transportDurationLabel(item) || "時間未填")}</span>
         <span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>
         <span class="badge">行李友善度：${escapeHtml(item.luggageFriendly || "未填")}</span>
         <span class="badge amber">${escapeHtml(item.bookingStatus || "票券未填")}</span>
@@ -1804,12 +1856,15 @@ function openTransportForm(id, defaultDate) {
     title: item ? "編輯交通" : "新增交通",
     fields: [
       dateField("date", "日期", true), timeField("startTime", "出發時間"), text("fromName", "起點", true), text("toName", "終點", true), selectField("method", "交通方式", fieldOptions.transport),
-      text("duration", "所需時間"), numberField("cost", "費用"), selectField("currency", "幣別", fieldOptions.currency), text("route", "路線"), text("departStation", "上車 / 出發站"),
+      durationField("duration", "所需時間", true), numberField("cost", "費用"), selectField("currency", "幣別", fieldOptions.currency), text("route", "路線"), text("departStation", "上車 / 出發站"),
       text("arrivalStation", "下車 / 抵達站"), text("transferInfo", "轉乘資訊"), selectField("luggageFriendly", "行李友善度", fieldOptions.luggageFriendly),
       selectField("bookingStatus", "票券 / 預約狀態", fieldOptions.bookingStatus), text("ticketInfo", "交通票資訊"), urlField("mapUrl", "地圖 / 導航連結"), text("backup", "備案交通"), textarea("notes", "注意事項", true)
     ],
-    item: item || { date: defaultDate || activeTrip().startDate || todayISO(), method: "地鐵", currency: activeTrip().currency || "TWD", luggageFriendly: "中", bookingStatus: "不需預約" },
-    onSubmit: (data) => upsert("transportSegments", item, data, "transport")
+    item: item || { date: defaultDate || activeTrip().startDate || todayISO(), method: "地鐵", durationHours: 0, durationMinutes: 1, durationTotalMinutes: 1, duration: "1 分鐘", currency: activeTrip().currency || "TWD", luggageFriendly: "中", bookingStatus: "不需預約" },
+    onSubmit: (data) => {
+      data.endTime = addMinutesToTime(data.startTime, data.durationTotalMinutes);
+      upsert("transportSegments", item, data, "transport");
+    }
   });
 }
 
@@ -1958,10 +2013,50 @@ function openForm({ title, fields, item, onSubmit }) {
       if (output) output.textContent = `${input.value}%`;
     });
   });
+  const updateDurationPreviews = () => {
+    fields.filter((field) => field.type === "duration").forEach((field) => {
+      const hoursInput = form.elements[`${field.name}Hours`];
+      const minutesInput = form.elements[`${field.name}Minutes`];
+      const preview = form.querySelector(`[data-duration-preview="${field.name}"]`);
+      if (!hoursInput || !minutesInput || !preview) return;
+      const totalMinutes = parseNumber(hoursInput.value) * 60 + parseNumber(minutesInput.value);
+      const startTime = form.elements.startTime?.value || "";
+      if (totalMinutes < 1) {
+        preview.textContent = "最少需選擇 0 小時 1 分鐘";
+        return;
+      }
+      if (!startTime) {
+        preview.textContent = `共 ${formatTransportDuration(totalMinutes)}；選擇出發時間後會自動計算抵達時間`;
+        return;
+      }
+      preview.textContent = `共 ${formatTransportDuration(totalMinutes)}・預計抵達 ${addMinutesToTime(startTime, totalMinutes)}`;
+    });
+  };
+  form.addEventListener("input", updateDurationPreviews);
+  form.addEventListener("change", updateDurationPreviews);
+  updateDurationPreviews();
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = {};
     for (const field of fields) {
+      if (field.type === "duration") {
+        const hoursInput = form.elements[`${field.name}Hours`];
+        const minutesInput = form.elements[`${field.name}Minutes`];
+        const hours = parseNumber(hoursInput?.value);
+        const minutes = parseNumber(minutesInput?.value);
+        const totalMinutes = hours * 60 + minutes;
+        if (field.required && totalMinutes < 1) {
+          toast("所需時間最少為 0 小時 1 分鐘");
+          minutesInput?.focus();
+          return;
+        }
+        data[`${field.name}Hours`] = hours;
+        data[`${field.name}Minutes`] = minutes;
+        data[`${field.name}TotalMinutes`] = totalMinutes;
+        data[field.name] = formatTransportDuration(totalMinutes);
+        continue;
+      }
       const input = form.elements[field.name];
       if (!input) continue;
       if (field.type === "checkbox") data[field.name] = input.checked;
@@ -1979,6 +2074,20 @@ function renderField(field, item) {
   const full = field.full ? "full" : "";
   if (field.type === "textarea") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><textarea name="${field.name}" ${required}>${escapeHtml(value)}</textarea></div>`;
+  }
+  if (field.type === "duration") {
+    const parts = durationPartsFromItem(item);
+    const hourOptions = Array.from({ length: 73 }, (_, hour) => `<option value="${hour}" ${hour === parts.hours ? "selected" : ""}>${hour}</option>`).join("");
+    const minuteOptions = Array.from({ length: 60 }, (_, minute) => `<option value="${minute}" ${minute === parts.minutes ? "selected" : ""}>${minute}</option>`).join("");
+    return `
+      <div class="field full duration-field">
+        <label>${escapeHtml(field.label)}</label>
+        <div class="duration-picker">
+          <label class="duration-select-wrap"><select name="${field.name}Hours" aria-label="所需小時">${hourOptions}</select><span>小時</span></label>
+          <label class="duration-select-wrap"><select name="${field.name}Minutes" aria-label="所需分鐘">${minuteOptions}</select><span>分鐘</span></label>
+        </div>
+        <small class="duration-preview" data-duration-preview="${field.name}"></small>
+      </div>`;
   }
   if (field.type === "select") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><select name="${field.name}" ${required}>${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></div>`;
@@ -2001,6 +2110,7 @@ function text(name, label, full = false, required = false) { return { name, labe
 function textarea(name, label, full = false) { return { name, label, type: "textarea", full }; }
 function dateField(name, label, required = false) { return { name, label, type: "date", required }; }
 function timeField(name, label, required = false) { return { name, label, type: "time", required }; }
+function durationField(name, label, required = false) { return { name, label, type: "duration", required, full: true }; }
 function datetimeField(name, label, required = false) { return { name, label, type: "datetime-local", required }; }
 function numberField(name, label, required = false) { return { name, label, type: "number", required }; }
 function urlField(name, label, required = false) { return { name, label, type: "url", required, full: true }; }
