@@ -3015,7 +3015,7 @@ h3 {
 }
 
 /* =========================================================
-   TripBoard 2.7.7 — next-focus arrow true optical centering
+   TripBoard 2.7.8 — next-focus arrow final centering
    ========================================================= */
 .round-arrow {
   position: relative;
@@ -3029,8 +3029,8 @@ h3 {
 }
 
 /* Use a fixed SVG-shaped mask instead of a font glyph or rotated border.
-   The slight upper-left optical adjustment compensates for the chevron's
-   visual weight, so it appears centered inside the circle on iPhone. */
+   A small rightward optical adjustment corrects the previous left bias
+   while keeping the chevron vertically balanced on iPhone. */
 .round-arrow::before {
   content: "";
   display: block;
@@ -3046,5 +3046,5 @@ h3 {
   mask-repeat: no-repeat;
   mask-position: center;
   mask-size: contain;
-  transform: translate(-1.25px, -0.75px);
+  transform: translate(0.75px, -0.25px);
 }
