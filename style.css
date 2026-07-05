@@ -2998,3 +2998,18 @@ h3 {
   contain: none;
   isolation: isolate;
 }
+
+
+/* =========================================================
+   TripBoard 2.7.5 — Google Sheets form spacing
+   ========================================================= */
+.google-sync-actions {
+  margin-top: 20px;
+  gap: 14px;
+}
+
+@media (max-width: 720px) {
+  .google-sync-actions {
+    margin-top: 18px;
+  }
+}

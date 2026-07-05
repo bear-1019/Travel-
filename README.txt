@@ -1,7 +1,9 @@
-TripBoard 主畫面 Icon 滿版修正版
+TripBoard Google Sheets 同步表單間距修正版
 
-請上傳並覆蓋：
+上傳並覆蓋：
 - index.html
+- app.js
+- style.css
 - service-worker.js
 - manifest.json
 - icons/icon-192.png
@@ -9,8 +11,6 @@ TripBoard 主畫面 Icon 滿版修正版
 
 icons/icon-1024.png 是高解析備份。
 
-iPhone 更新方式：
-1. 等 GitHub Pages 部署完成。
-2. 刪除主畫面舊的 TripBoard。
-3. Safari 重新開啟網站。
-4. 分享 → 加入主畫面。
+本版修正：
+- 暱稱輸入框與「儲存到共享雲端」按鈕之間加入適當間距。
+- 保留目前的多主題、仿宋字體、最終圖示與滿版主畫面 Icon。

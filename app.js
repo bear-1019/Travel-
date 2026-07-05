@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.7.2-final-icons";
+const APP_VERSION = "2.7.5-sync-spacing";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1576,7 +1576,7 @@ function renderGoogleSyncPanel() {
       <div class="field"><label>PIN</label><input id="google-pin" type="password" inputmode="numeric" placeholder="例如 1234" value="${escapeHtml(saved.pin || "")}" /></div>
       <div class="field full"><label>暱稱</label><input id="google-user-name" placeholder="例如 Kitty / 帕寶" value="${escapeHtml(saved.userName || "")}" /></div>
     </div>
-    <div class="grid">
+    <div class="grid google-sync-actions">
       <button class="btn primary block" data-action="google-cloud-save">儲存到共享雲端</button>
       <button class="btn block" data-action="google-cloud-load">從共享雲端載入</button>
       <button class="btn block" data-action="google-cloud-metadata">檢查雲端更新時間</button>
