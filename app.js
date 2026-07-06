@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.13.2-itinerary-card-aesthetic";
+const APP_VERSION = "2.13.3-itinerary-card-compact-footer";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1279,12 +1279,11 @@ function renderTimelineItem(item) {
               </div>
               ${renderLinks(item, false)}
               ${item.notes ? `<div class="item-meta item-notes">${escapeHtml(item.notes)}</div>` : ""}
-              <div class="expanded-actions">
-                <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
-                <button class="btn small danger" data-action="delete" data-collection="itineraryItems" data-id="${item.id}">刪除</button>
-              </div>
             </div>
-            <button class="expand-details-button" data-action="toggle-itinerary-details" data-id="${item.id}">${expanded ? "收合資訊" : "展開更多"}<span>${expanded ? "⌃" : "⌄"}</span></button>
+            <div class="itinerary-card-footer ${expanded ? "is-expanded" : ""}">
+              ${expanded ? `<div class="itinerary-footer-actions"><button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button><button class="btn small danger" data-action="delete" data-collection="itineraryItems" data-id="${item.id}">刪除</button></div>` : ""}
+              <button class="expand-details-button" data-action="toggle-itinerary-details" data-id="${item.id}">${expanded ? "收合資訊" : "展開更多"}<span>${expanded ? "⌃" : "⌄"}</span></button>
+            </div>
           </div>
         </div>
       </article>

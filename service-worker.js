@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.13.2-itinerary-card-aesthetic";
+const CACHE_NAME = "tripboard-v2.13.3-itinerary-card-compact-footer";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.13.2",
-  "./app.js?v=2.13.2",
+  "./style.css?v=2.13.3",
+  "./app.js?v=2.13.3",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",

@@ -3957,3 +3957,92 @@ body[data-theme="coffee"] {
     font-size: .65rem;
   }
 }
+
+
+/* TripBoard 2.13.3 — compact itinerary cards and unified footer */
+.mockup-timeline-item .timeline-time {
+  min-height: 106px;
+  padding-top: 10px;
+  padding-bottom: 9px;
+}
+
+.mockup-card-layout {
+  padding: 15px 17px 9px;
+  align-items: stretch;
+}
+
+.mockup-card-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.itinerary-quick-row {
+  margin-top: 7px;
+}
+
+.mockup-itinerary-card .itinerary-extra {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.itinerary-card-footer {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.itinerary-card-footer.is-expanded {
+  justify-content: space-between;
+}
+
+.itinerary-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.itinerary-footer-actions .btn.small {
+  padding: 7px 12px;
+  font-size: .72rem;
+  box-shadow: none;
+}
+
+.mockup-itinerary-card .expand-details-button {
+  width: auto;
+  margin: 0 0 0 auto;
+  padding: 6px 0 2px 8px;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+@media screen and (max-width: 520px) {
+  .mockup-timeline-item .timeline-time {
+    min-height: 102px;
+    padding-top: 9px;
+    padding-bottom: 8px;
+  }
+
+  .mockup-card-layout {
+    padding: 13px 13px 8px;
+  }
+
+  .itinerary-card-footer {
+    padding-top: 6px;
+  }
+
+  .itinerary-footer-actions .btn.small {
+    padding: 6px 10px;
+    font-size: .68rem;
+  }
+
+  .mockup-itinerary-card .expand-details-button {
+    padding-top: 5px;
+    font-size: .68rem;
+  }
+}
