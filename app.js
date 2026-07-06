@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.12.0-itinerary-transport-redesign";
+const APP_VERSION = "2.12.1-transfer-money-walk-fix";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -103,8 +103,7 @@ function transportLegsFromItem(item = {}) {
 function transportRouteLabel(item = {}) {
   const legs = transportLegsFromItem(item);
   if (Array.isArray(item.segments) && legs.length > 1) {
-    const firstRoute = legs[0].route || transportMethodLabel(item.method);
-    return `${firstRoute}・共 ${legs.length} 段`;
+    return `共 ${legs.length} 段`;
   }
   return item.route || transportMethodLabel(item.method);
 }
@@ -1286,14 +1285,18 @@ function renderTransportInline(item) {
   const methodLabel = transportMethodLabel(item.method);
   const methodIcon = transportMethodIconName(item.method);
   const routeLabel = transportRouteLabel(item);
+  const legs = Array.isArray(item.segments) && item.segments.length ? transportLegsFromItem(item) : [];
   const arrivalSuffix = flightLinked && item.arrivalDate && item.arrivalDate !== item.date
     ? `・抵達 ${escapeHtml(formatDateYmd(item.arrivalDate))} ${escapeHtml(item.endTime || "")}`
     : "";
   const inlineActions = flightLinked
     ? `<button class="mini-link" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button>`
     : `<button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>`;
+  const transportCopy = legs.length
+    ? `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}・共 ${legs.length} 段</strong><span class="transport-inline-leg-list">${legs.map((leg, index) => `<small><b>${index + 1}</b><span>${leg.route ? `${escapeHtml(leg.route)}｜` : ""}${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}${leg.startTime ? `・${escapeHtml(leg.startTime)}` : ""}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span></small>`).join("")}</span>${parseNumber(item.cost) ? `<em>${currency(item.cost, item.currency || "TWD")}</em>` : ""}</span>`
+    : `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}${routeLabel && routeLabel !== methodLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>`;
   return `
-    <div class="timeline-transport-item">
+    <div class="timeline-transport-item ${legs.length ? "has-transfer-legs" : ""}">
       <div class="transport-time-column">
         ${startLabel ? `<strong>${startLabel}</strong>` : ""}
         ${endLabel ? `<span>${endLabel}</span>` : ""}
@@ -1306,7 +1309,7 @@ function renderTransportInline(item) {
       <div class="transport-inline slim-transport-row">
         <div class="transport-inline-main">
           <span class="transport-icon transport-icon-${escapeHtml(methodIcon)}">${iconSvg(methodIcon, "transport-method-svg")}</span>
-          <span><strong>${escapeHtml(methodLabel)}${routeLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+          ${transportCopy}
         </div>
         <div class="transport-inline-actions">${inlineActions}</div>
       </div>
@@ -2153,8 +2156,8 @@ function openItineraryForm(id, defaultDate) {
       dateField("date", "日期", true), timeField("startTime", "開始時間"), timeField("endTime", "結束時間"), selectField("type", "類型", fieldOptions.itineraryType),
       text("title", "行程名稱", true), text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
       timeRangeField("openingHours", "營業時間"), selectField("ticketRequired", "是否需門票", fieldOptions.yesNo), selectField("ticketStatus", "門票狀態", fieldOptions.ticketStatus),
-      numberField("ticketPrice", "門票價格"), selectField("ticketCurrency", "門票幣值", fieldOptions.currency), urlField("ticketLink", "購票 / 票券連結"),
-      numberField("budget", "預估花費"), selectField("budgetCurrency", "預估花費幣值", fieldOptions.currency),
+      moneyField("ticketPrice", "ticketCurrency", "門票價格", fieldOptions.currency), urlField("ticketLink", "購票 / 票券連結"),
+      moneyField("budget", "budgetCurrency", "預估花費", fieldOptions.currency),
       selectField("weatherType", "天氣條件", fieldOptions.weather), textarea("notes", "備註", true)
     ],
     item: item || { date: defaultDate || activeTrip().startDate || todayISO(), type: "景點", ticketRequired: "否", ticketStatus: "不需", ticketCurrency: defaultCurrency, budgetCurrency: defaultCurrency, weatherType: "室內" },
@@ -2189,8 +2192,8 @@ function transportDurationPickerMarkup(prefix, label, totalMinutes = 1) {
     </div>`;
 }
 
-function transportInputField(name, label, value = "", type = "text", full = false, placeholder = "") {
-  return `<div class="field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label><input type="${type}" name="${name}" value="${escapeHtml(value)}" ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ""} /></div>`;
+function transportInputField(name, label, value = "", type = "text", full = false, placeholder = "", attributes = "") {
+  return `<div class="field ${full ? "full" : ""}" ${attributes}><label>${escapeHtml(label)}</label><input type="${type}" name="${name}" value="${escapeHtml(value)}" ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ""} /></div>`;
 }
 
 function openTransportForm(id, defaultDate) {
@@ -2271,7 +2274,7 @@ function openTransportForm(id, defaultDate) {
           <section class="transport-method-section" data-transport-kind="simple" hidden>
             <div class="transport-form-section-title"><strong>交通資訊</strong><span>適用步行、飛機及其他交通</span></div>
             <div class="form-grid">
-              ${transportInputField("simpleRoute", "路線／班次", item.route, "text", true, "可填航班、船班或路線名稱")}
+              ${transportInputField("simpleRoute", "路線／班次", item.route, "text", true, "可填航班、船班或路線名稱", 'data-hide-for-walk="true"')}
               ${transportInputField("simpleFromName", "起點", item.fromName)}
               ${transportInputField("simpleToName", "終點", item.toName)}
               ${transportInputField("simpleStartTime", "出發時間", item.startTime, "time")}
@@ -2288,11 +2291,11 @@ function openTransportForm(id, defaultDate) {
             </div>
           </section>
 
-          <section class="transport-cost-section">
-            <div class="transport-form-section-title"><strong>花費</strong><span>費用統一放在表單最下方</span></div>
-            <div class="form-grid">
-              ${transportInputField("cost", "費用", item.cost || "", "number")}
-              <div class="field"><label>幣值</label><select name="currency">${currencyOptions}</select></div>
+          <section class="transport-cost-section" data-hide-for-walk="true">
+            <div class="transport-form-section-title"><strong>花費</strong></div>
+            <div class="money-input-row transport-money-row">
+              <select name="currency" aria-label="花費幣值">${currencyOptions}</select>
+              <input type="number" name="cost" value="${escapeHtml(item.cost || "")}" inputmode="decimal" min="0" step="any" placeholder="金額" aria-label="花費金額" />
             </div>
           </section>
 
@@ -2326,9 +2329,14 @@ function openTransportForm(id, defaultDate) {
     });
   };
   const updateMethodSection = () => {
-    const kind = transportFormKind(value("method"));
+    const method = transportMethodLabel(value("method"));
+    const kind = transportFormKind(method);
+    const isWalking = method === "步行";
     form.querySelectorAll("[data-transport-kind]").forEach((section) => {
       section.hidden = section.dataset.transportKind !== kind;
+    });
+    form.querySelectorAll("[data-hide-for-walk]").forEach((element) => {
+      element.hidden = isWalking;
     });
     updateTransferLegs();
   };
@@ -2343,13 +2351,14 @@ function openTransportForm(id, defaultDate) {
     event.preventDefault();
     const method = transportMethodLabel(value("method"));
     const kind = transportFormKind(method);
+    const isWalking = method === "步行";
     const data = {
       date: value("date") || defaultDate || activeTrip().startDate || todayISO(),
       method,
       mapUrl: value("mapUrl"),
       backup: value("backup"),
       notes: value("notes"),
-      cost: parseNumber(value("cost")),
+      cost: isWalking ? 0 : parseNumber(value("cost")),
       currency: value("currency") || activeTrip().currency || "TWD",
       luggageFriendly: "",
       bookingStatus: "",
@@ -2382,7 +2391,7 @@ function openTransportForm(id, defaultDate) {
       data.route = segments.map((segment) => segment.route).filter(Boolean).join(" → ");
       data.departStation = first.fromStation;
       data.arrivalStation = last.toStation;
-      data.transferInfo = count ? segments.slice(1).map((segment, index) => `第 ${index + 1} 次轉乘：${segment.route || "路線未填"}`).join("；") : (existing?.transferInfo && !Array.isArray(existing.segments) ? existing.transferInfo : "");
+      data.transferInfo = count ? segments.map((segment, index) => `第 ${index + 1} 段：${segment.route || "路線未填"}｜${segment.fromStation || "上車站未填"} → ${segment.toStation || "下車站未填"}`).join("；") : (existing?.transferInfo && !Array.isArray(existing.segments) ? existing.transferInfo : "");
       data.durationTotalMinutes = summedMinutes;
       data.durationHours = Math.floor(summedMinutes / 60);
       data.durationMinutes = summedMinutes % 60;
@@ -2396,7 +2405,7 @@ function openTransportForm(id, defaultDate) {
       data.toName = value(`${prefix}ToName`);
       data.startTime = value(`${prefix}StartTime`);
       data.endTime = addMinutesToTime(data.startTime, totalMinutes);
-      data.route = kind === "simple" ? value("simpleRoute") : "";
+      data.route = kind === "simple" && !isWalking ? value("simpleRoute") : "";
       data.departStation = "";
       data.arrivalStation = "";
       data.transferInfo = "";
@@ -2628,6 +2637,13 @@ function openForm({ title, fields, item, onSubmit }) {
     event.preventDefault();
     const data = {};
     for (const field of fields) {
+      if (field.type === "money") {
+        const amountInput = form.elements[field.amountName];
+        const currencyInput = form.elements[field.currencyName];
+        data[field.amountName] = parseNumber(amountInput?.value);
+        data[field.currencyName] = String(currencyInput?.value || activeTrip()?.currency || "TWD").trim();
+        continue;
+      }
       if (field.type === "timeRange") {
         const startInput = form.elements[`${field.name}Start`];
         const endInput = form.elements[`${field.name}End`];
@@ -2670,6 +2686,18 @@ function renderField(field, item) {
   const full = field.full ? "full" : "";
   if (field.type === "textarea") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><textarea name="${field.name}" ${required}>${escapeHtml(value)}</textarea></div>`;
+  }
+  if (field.type === "money") {
+    const amountValue = item?.[field.amountName] ?? "";
+    const currencyValue = item?.[field.currencyName] || activeTrip()?.currency || "TWD";
+    return `
+      <div class="field full money-field">
+        <label>${escapeHtml(field.label)}</label>
+        <div class="money-input-row">
+          <select name="${field.currencyName}" aria-label="${escapeHtml(field.label)}幣值">${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === currencyValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>
+          <input type="number" name="${field.amountName}" value="${escapeHtml(amountValue)}" min="0" step="any" inputmode="decimal" placeholder="金額" aria-label="${escapeHtml(field.label)}金額" />
+        </div>
+      </div>`;
   }
   if (field.type === "timeRange") {
     const parts = openingHoursParts(item);
@@ -2719,6 +2747,7 @@ function textarea(name, label, full = false) { return { name, label, type: "text
 function dateField(name, label, required = false) { return { name, label, type: "date", required }; }
 function timeField(name, label, required = false) { return { name, label, type: "time", required }; }
 function timeRangeField(name, label, required = false) { return { name, label, type: "timeRange", required, full: true }; }
+function moneyField(amountName, currencyName, label, options, required = false) { return { name: amountName, amountName, currencyName, label, type: "money", options, required, full: true }; }
 function durationField(name, label, required = false) { return { name, label, type: "duration", required, full: true }; }
 function datetimeField(name, label, required = false) { return { name, label, type: "datetime-local", required }; }
 function numberField(name, label, required = false) { return { name, label, type: "number", required }; }

@@ -3646,3 +3646,78 @@ body[data-theme="coffee"] {
     align-items: flex-start;
   }
 }
+
+
+/* TripBoard 2.12.1 — transfer legs, combined money fields and walking cleanup */
+.money-field {
+  margin: 0;
+}
+
+.money-input-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.money-input-row select,
+.money-input-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.transport-money-row {
+  margin-top: 2px;
+}
+
+.transport-inline-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.transport-inline-copy > strong {
+  color: var(--theme-text-strong, var(--text));
+}
+
+.transport-inline-copy > small,
+.transport-inline-copy > em {
+  color: var(--theme-muted, var(--muted));
+  font-size: .78rem;
+  font-style: normal;
+}
+
+.transport-inline-leg-list {
+  display: grid;
+  gap: 3px;
+}
+
+.transport-inline-leg-list small {
+  display: grid;
+  grid-template-columns: 1.2rem minmax(0, 1fr);
+  gap: 5px;
+  color: var(--theme-muted, var(--muted));
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.transport-inline-leg-list b {
+  color: var(--theme-text-strong, var(--text));
+  font-family: var(--number-serif, "Noto Serif TC", serif);
+  font-weight: 700;
+}
+
+[data-hide-for-walk][hidden] {
+  display: none !important;
+}
+
+@media (max-width: 520px) {
+  .money-input-row {
+    grid-template-columns: minmax(88px, 108px) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .transport-inline-leg-list small {
+    font-size: .75rem;
+  }
+}

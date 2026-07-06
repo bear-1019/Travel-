@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.12.0-itinerary-transport-redesign";
+const CACHE_NAME = "tripboard-v2.12.1-transfer-money-walk-fix";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.12.0",
-  "./app.js?v=2.12.0",
+  "./style.css?v=2.12.1",
+  "./app.js?v=2.12.1",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
