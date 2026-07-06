@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.12.2-transfer-leg-number-remove";
+const APP_VERSION = "2.13.0-free-map-preview";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -158,6 +158,7 @@ function iconSvg(name, className = "app-icon") {
     food: '<path d="M6 3v8M3 3v5a3 3 0 0 0 6 0V3M6 11v10M15 3v18M15 3c4 2 4 7 0 9"/>',
     cafe: '<path d="M4 8h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M16 10h2a3 3 0 0 1 0 6h-2M7 3v2M11 3v2"/>',
     shopping: '<path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    storefront: '<path d="M4 10h16v10H4V10Z"/><path d="M3 10 5 4h14l2 6"/><path d="M7 10a2 2 0 0 1-4 0M11 10a2 2 0 0 1-4 0M15 10a2 2 0 0 1-4 0M19 10a2 2 0 0 1-4 0M21 10a2 2 0 0 1-2 2"/><path d="M8 14h4v6M15 14h3"/>',
     activity: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     airport: '<path d="M4 11.2 20 4.8 14.1 19l-3.2-5.4L4 11.2Z"/><path d="m10.9 13.6 9.1-8.8"/>',
     station: '<rect x="5" y="3" width="14" height="16" rx="3"/><path d="M8 7h8M8 14h8M8 19l-2 2M16 19l2 2"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
@@ -172,7 +173,7 @@ function iconSvg(name, className = "app-icon") {
 function itineraryTypeIcon(type = "") {
   const mapping = {
     "景點": "museum", "展覽": "museum", "餐廳": "food", "咖啡廳": "cafe",
-    "購物": "shopping", "活動": "activity", "機場": "airport", "車站": "station",
+    "購物": "shopping", "商店街": "storefront", "活動": "activity", "機場": "airport", "車站": "station",
     "夜景": "moon", "休息": "rest", "住宿": "bed", "交通": "route", "點心": "cafe", "備案": "pin"
   };
   return iconSvg(mapping[type] || "pin", "itinerary-type-icon-svg");
@@ -1224,6 +1225,25 @@ function renderDayTimeline(day, dayNo, items, transports) {
   `;
 }
 
+function renderItineraryMapPreview(item) {
+  if (!item?.mapUrl) return "";
+  const typeLabel = item.type || "地點";
+  return `
+    <a class="itinerary-map-preview" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(item.title || typeLabel)}">
+      <span class="itinerary-map-preview-copy">
+        <strong>${escapeHtml(item.title || typeLabel)}</strong>
+        <small>Google Maps・點擊開啟</small>
+      </span>
+      <span class="itinerary-map-preview-thumb" aria-hidden="true">
+        <span class="map-preview-road road-a"></span>
+        <span class="map-preview-road road-b"></span>
+        <span class="map-preview-road road-c"></span>
+        <span class="map-preview-icon">${itineraryTypeIcon(item.type)}</span>
+      </span>
+    </a>
+  `;
+}
+
 function renderTimelineItem(item) {
   const startLabel = escapeHtml(item.startTime || "未定");
   const endLabel = item.endTime ? escapeHtml(item.endTime) : "";
@@ -1236,7 +1256,6 @@ function renderTimelineItem(item) {
     item.type ? `<span class="badge">${escapeHtml(item.type)}</span>` : "",
     item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
   ].filter(Boolean).join("");
-  const mapLink = item.mapUrl ? `<a class="badge blue itinerary-map-link" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">${iconSvg("pin", "inline-link-icon")} 地圖</a>` : "";
   const ticketCurrency = item.ticketCurrency || activeTrip().currency || "TWD";
   const budgetCurrency = item.budgetCurrency || activeTrip().currency || "TWD";
 
@@ -1250,11 +1269,11 @@ function renderTimelineItem(item) {
             <div class="item-row simplified-item-head">
               <div class="simplified-item-copy">
                 <div class="item-title">${escapeHtml(item.title)}</div>
-                <div class="item-meta">${escapeHtml(item.address || "地址未填")}</div>
               </div>
               <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}" aria-label="${expanded ? "收合資訊" : "展開更多資訊"}">${iconSvg("more", "more-dots-svg")}</button>
             </div>
-            ${(summaryTags || mapLink) ? `<div class="badges summary-badges">${summaryTags}${mapLink}</div>` : ""}
+            ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
+            ${renderItineraryMapPreview(item)}
             <div class="itinerary-extra ${expanded ? "open" : ""}">
               <div class="badges detail-badges">
                 ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
@@ -2053,7 +2072,7 @@ const fieldOptions = {
   currency: ["TWD", "JPY", "KRW", "CNY", "HKD", "MOP", "SGD", "MYR", "THB", "VND", "PHP", "IDR", "USD", "CAD", "AUD", "NZD", "EUR", "GBP", "CHF", "SEK", "NOK", "DKK", "CZK", "PLN", "HUF", "TRY", "AED", "SAR", "QAR", "INR"],
   yesNo: ["是", "否"],
   ticketStatus: ["不需", "待購買", "已購買", "需現場買", "已預約"],
-  itineraryType: ["景點", "餐廳", "咖啡廳", "點心", "購物", "交通", "住宿", "活動", "展覽", "夜景", "機場", "車站", "休息", "備案"],
+  itineraryType: ["景點", "餐廳", "咖啡廳", "點心", "購物", "商店街", "交通", "住宿", "活動", "展覽", "夜景", "機場", "車站", "休息", "備案"],
   itemStatus: ["想去", "已排入", "已預約", "已完成", "取消"],
   priority: ["必去", "可去", "備案"],
   weather: ["室內", "室外", "雨天備案", "天氣好再去"],
@@ -2153,7 +2172,7 @@ function openItineraryForm(id, defaultDate) {
     title: item ? "編輯行程" : "新增行程",
     fields: [
       dateField("date", "日期", true), timeField("startTime", "開始時間"), timeField("endTime", "結束時間"), selectField("type", "類型", fieldOptions.itineraryType),
-      text("title", "行程名稱", true), text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
+      text("title", "行程名稱", true), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
       timeRangeField("openingHours", "營業時間"), selectField("ticketRequired", "是否需門票", fieldOptions.yesNo), selectField("ticketStatus", "門票狀態", fieldOptions.ticketStatus),
       moneyField("ticketPrice", "ticketCurrency", "門票價格", fieldOptions.currency), urlField("ticketLink", "購票 / 票券連結"),
       moneyField("budget", "budgetCurrency", "預估花費", fieldOptions.currency),
@@ -2161,6 +2180,7 @@ function openItineraryForm(id, defaultDate) {
     ],
     item: item || { date: defaultDate || activeTrip().startDate || todayISO(), type: "景點", ticketRequired: "否", ticketStatus: "不需", ticketCurrency: defaultCurrency, budgetCurrency: defaultCurrency, weatherType: "室內" },
     onSubmit: (data) => {
+      data.address = "";
       data.openingHoursStart = data.openingHoursStart || "";
       data.openingHoursEnd = data.openingHoursEnd || "";
       data.openingHours = formatOpeningHours(data.openingHoursStart, data.openingHoursEnd);

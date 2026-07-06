@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.12.2-transfer-leg-number-remove";
+const CACHE_NAME = "tripboard-v2.13.0-free-map-preview";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.12.2",
-  "./app.js?v=2.12.2",
+  "./style.css?v=2.13.0",
+  "./app.js?v=2.13.0",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
