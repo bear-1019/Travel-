@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.12.1-transfer-money-walk-fix";
+const APP_VERSION = "2.12.2-transfer-leg-number-remove";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -116,11 +116,10 @@ function transportLegEndTime(leg = {}) {
 function renderTransportLegDetails(item = {}) {
   if (!Array.isArray(item.segments) || !item.segments.length) return "";
   const legs = transportLegsFromItem(item);
-  return `<div class="transport-leg-summary-list">${legs.map((leg, index) => `
+  return `<div class="transport-leg-summary-list">${legs.map((leg) => `
     <div class="transport-leg-summary-item">
-      <span class="transport-leg-number">${index + 1}</span>
       <div>
-        <strong>${escapeHtml(leg.route || `第 ${index + 1} 段`)}</strong>
+        <strong>${escapeHtml(leg.route || "路線未填")}</strong>
         <small>${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}</small>
       </div>
       <span>${escapeHtml(leg.startTime || "未定")}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span>
@@ -1293,7 +1292,7 @@ function renderTransportInline(item) {
     ? `<button class="mini-link" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button>`
     : `<button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>`;
   const transportCopy = legs.length
-    ? `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}・共 ${legs.length} 段</strong><span class="transport-inline-leg-list">${legs.map((leg, index) => `<small><b>${index + 1}</b><span>${leg.route ? `${escapeHtml(leg.route)}｜` : ""}${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}${leg.startTime ? `・${escapeHtml(leg.startTime)}` : ""}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span></small>`).join("")}</span>${parseNumber(item.cost) ? `<em>${currency(item.cost, item.currency || "TWD")}</em>` : ""}</span>`
+    ? `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}・共 ${legs.length} 段</strong><span class="transport-inline-leg-list">${legs.map((leg) => `<small><span>${leg.route ? `${escapeHtml(leg.route)}｜` : ""}${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}${leg.startTime ? `・${escapeHtml(leg.startTime)}` : ""}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span></small>`).join("")}</span>${parseNumber(item.cost) ? `<em>${currency(item.cost, item.currency || "TWD")}</em>` : ""}</span>`
     : `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}${routeLabel && routeLabel !== methodLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>`;
   return `
     <div class="timeline-transport-item ${legs.length ? "has-transfer-legs" : ""}">

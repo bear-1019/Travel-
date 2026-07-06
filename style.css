@@ -3589,7 +3589,7 @@ body[data-theme="coffee"] {
 
 .transport-leg-summary-item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 10px 0;
@@ -3693,18 +3693,10 @@ body[data-theme="coffee"] {
 }
 
 .transport-inline-leg-list small {
-  display: grid;
-  grid-template-columns: 1.2rem minmax(0, 1fr);
-  gap: 5px;
+  display: block;
   color: var(--theme-muted, var(--muted));
   font-size: .78rem;
   line-height: 1.35;
-}
-
-.transport-inline-leg-list b {
-  color: var(--theme-text-strong, var(--text));
-  font-family: var(--number-serif, "Noto Serif TC", serif);
-  font-weight: 700;
 }
 
 [data-hide-for-walk][hidden] {
