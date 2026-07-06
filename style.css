@@ -3833,3 +3833,127 @@ body[data-theme="coffee"] {
     height: 32px;
   }
 }
+
+
+/* TripBoard 2.13.2 — cleaner itinerary card hierarchy */
+.mockup-card-layout {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px 18px 13px;
+}
+
+.itinerary-type-column {
+  width: 54px;
+  gap: 7px;
+}
+
+.itinerary-type-orb {
+  width: 50px;
+  height: 50px;
+}
+
+.itinerary-type-orb .itinerary-type-icon-svg {
+  width: 23px;
+  height: 23px;
+}
+
+.itinerary-type-label {
+  max-width: 54px;
+  padding: 4px 7px;
+  font-size: .62rem;
+  line-height: 1;
+}
+
+.mockup-card-main {
+  padding-top: 2px;
+}
+
+.mockup-itinerary-card .simplified-item-head {
+  gap: 12px;
+}
+
+.mockup-itinerary-card .item-title {
+  line-height: 1.4;
+}
+
+.itinerary-quick-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.itinerary-quick-row .badge {
+  margin: 0;
+}
+
+.itinerary-map-chip {
+  min-height: 29px;
+  padding: 5px 9px 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-line, var(--line)) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent-soft, var(--accent-soft)) 48%, transparent);
+  color: var(--theme-text-strong, var(--text));
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .68rem;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.itinerary-map-chip:active {
+  transform: scale(.97);
+}
+
+.itinerary-map-chip-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
+}
+
+.itinerary-map-chip-arrow {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2;
+  opacity: .7;
+}
+
+/* Disable the previous full-width map-card treatment. */
+.itinerary-map-preview,
+.itinerary-map-preview-copy,
+.itinerary-map-link-icon,
+.itinerary-map-link-arrow {
+  display: none !important;
+}
+
+@media (max-width: 420px) {
+  .mockup-card-layout {
+    grid-template-columns: 50px minmax(0, 1fr);
+    gap: 15px;
+    padding: 16px 15px 12px;
+  }
+
+  .itinerary-type-column {
+    width: 50px;
+  }
+
+  .itinerary-type-orb {
+    width: 46px;
+    height: 46px;
+  }
+
+  .itinerary-type-label {
+    max-width: 50px;
+    font-size: .6rem;
+  }
+
+  .itinerary-map-chip {
+    min-height: 27px;
+    padding: 4px 8px 4px 7px;
+    font-size: .65rem;
+  }
+}

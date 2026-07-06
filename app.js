@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.13.1-type-label-map-link";
+const APP_VERSION = "2.13.2-itinerary-card-aesthetic";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1229,13 +1229,10 @@ function renderItineraryMapPreview(item) {
   if (!item?.mapUrl) return "";
   const label = item.title || item.type || "地點";
   return `
-    <a class="itinerary-map-preview" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(label)}">
-      <span class="itinerary-map-link-icon" aria-hidden="true">${iconSvg("pin", "itinerary-map-pin-svg")}</span>
-      <span class="itinerary-map-preview-copy">
-        <strong>Google Maps</strong>
-        <small>開啟位置與導航</small>
-      </span>
-      <span class="itinerary-map-link-arrow" aria-hidden="true">${iconSvg("chevronRight", "itinerary-map-arrow-svg")}</span>
+    <a class="itinerary-map-chip" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(label)}">
+      ${iconSvg("pin", "itinerary-map-chip-icon")}
+      <span>Google 地圖</span>
+      ${iconSvg("chevronRight", "itinerary-map-chip-arrow")}
     </a>
   `;
 }
@@ -1251,6 +1248,8 @@ function renderTimelineItem(item) {
   const summaryTags = [
     item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
   ].filter(Boolean).join("");
+  const mapChip = renderItineraryMapPreview(item);
+  const quickItems = [summaryTags, mapChip].filter(Boolean).join("");
   const ticketCurrency = item.ticketCurrency || activeTrip().currency || "TWD";
   const budgetCurrency = item.budgetCurrency || activeTrip().currency || "TWD";
 
@@ -1270,8 +1269,7 @@ function renderTimelineItem(item) {
               </div>
               <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}" aria-label="${expanded ? "收合資訊" : "展開更多資訊"}">${iconSvg("more", "more-dots-svg")}</button>
             </div>
-            ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
-            ${renderItineraryMapPreview(item)}
+            ${quickItems ? `<div class="itinerary-quick-row">${quickItems}</div>` : ""}
             <div class="itinerary-extra ${expanded ? "open" : ""}">
               <div class="badges detail-badges">
                 ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
