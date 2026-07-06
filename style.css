@@ -3417,3 +3417,232 @@ body[data-theme="coffee"] {
     font-size: .94rem;
   }
 }
+
+/* =========================================================
+   TripBoard 2.12.0 — itinerary and transport form redesign
+   ========================================================= */
+.time-range-field {
+  gap: 9px;
+}
+
+.time-range-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.time-range-picker > span {
+  color: var(--theme-muted, var(--muted));
+  font-weight: 800;
+  text-align: center;
+}
+
+.time-range-picker input[type="time"] {
+  min-width: 0;
+  text-align: center;
+  font-family: var(--number-serif, "Noto Serif TC", serif);
+}
+
+.itinerary-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.inline-link-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.transport-modal {
+  width: min(920px, 100%);
+}
+
+.transport-dynamic-form {
+  display: grid;
+  gap: 20px;
+}
+
+.transport-form-basics,
+.transport-method-section,
+.transport-common-section,
+.transport-cost-section {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--theme-line, var(--line));
+}
+
+.transport-cost-section {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.transport-form-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.transport-form-section-title strong {
+  color: var(--theme-text-strong, var(--text));
+  font-size: 1rem;
+}
+
+.transport-form-section-title span,
+.transport-duration-control small {
+  color: var(--theme-muted, var(--muted));
+  font-size: .78rem;
+}
+
+.transport-transfer-count {
+  margin-bottom: 12px;
+}
+
+.transport-leg-editors {
+  display: grid;
+  gap: 14px;
+}
+
+.transport-leg-editor {
+  padding: 14px;
+  border: 1px solid var(--theme-line, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-card, #fff) 78%, transparent);
+}
+
+.transport-leg-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.transport-leg-editor-head > span,
+.transport-leg-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: var(--theme-accent, var(--accent));
+  color: var(--theme-accent-contrast, #fff);
+  font-family: var(--number-serif, "Noto Serif TC", serif);
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.transport-legacy-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--theme-accent-soft, rgba(21, 39, 70, .08));
+  color: var(--theme-muted, var(--muted));
+  font-size: .8rem;
+  line-height: 1.55;
+}
+
+.transport-duration-control {
+  margin: 0;
+}
+
+.transport-duration-control > small {
+  min-height: 1.2em;
+}
+
+.transport-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.transport-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--theme-accent, var(--accent));
+  background: var(--theme-accent-soft, rgba(21, 39, 70, .08));
+  border: 1px solid var(--theme-line, var(--line));
+}
+
+.transport-card-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.transport-method-svg {
+  width: 22px;
+  height: 22px;
+}
+
+.transport-leg-summary-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.transport-leg-summary-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--theme-line, var(--line));
+}
+
+.transport-leg-summary-item > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.transport-leg-summary-item strong {
+  color: var(--theme-text-strong, var(--text));
+}
+
+.transport-leg-summary-item small,
+.transport-leg-summary-item > span:last-child,
+.transport-backup-note {
+  color: var(--theme-muted, var(--muted));
+  font-size: .8rem;
+}
+
+.transport-icon-highspeed .transport-method-svg,
+.transport-icon-highspeed .transport-card-svg {
+  transform: translateY(.5px);
+}
+
+@media (max-width: 640px) {
+  .time-range-picker {
+    gap: 7px;
+  }
+
+  .transport-form-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .transport-leg-editor {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .transport-leg-summary-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .transport-leg-summary-item > span:last-child {
+    grid-column: 2;
+  }
+
+  .transport-card-heading {
+    align-items: flex-start;
+  }
+}

@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.11.2-countdown-quickadd-routine-style";
+const APP_VERSION = "2.12.0-itinerary-transport-redesign";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -51,10 +51,13 @@ function transportMethodIconName(method = "") {
     case "公車":
       return "bus";
     case "火車":
-    case "高鐵":
       return "train";
+    case "高鐵":
+      return "highspeed";
     case "Uber":
+      return "rideshare";
     case "計程車":
+      return "taxi";
     case "自駕":
       return "car";
     case "飛機":
@@ -66,19 +69,81 @@ function transportMethodIconName(method = "") {
   }
 }
 
+function transportFormKind(method = "") {
+  const normalized = normalizeTransportMethod(method);
+  if (["自駕", "計程車", "Uber"].includes(normalized)) return "private";
+  if (["公車", "地鐵", "火車", "高鐵", "船"].includes(normalized)) return "transit";
+  return "simple";
+}
+
+function transportLegsFromItem(item = {}) {
+  if (Array.isArray(item.segments) && item.segments.length) {
+    return item.segments.slice(0, 6).map((segment) => ({
+      route: segment.route || "",
+      fromStation: segment.fromStation || segment.departStation || "",
+      toStation: segment.toStation || segment.arrivalStation || "",
+      startTime: segment.startTime || "",
+      durationHours: Number(segment.durationHours) || Math.floor((Number(segment.durationTotalMinutes) || 0) / 60),
+      durationMinutes: Number(segment.durationMinutes) || ((Number(segment.durationTotalMinutes) || 0) % 60),
+      durationTotalMinutes: Number(segment.durationTotalMinutes) || ((Number(segment.durationHours) || 0) * 60 + (Number(segment.durationMinutes) || 0))
+    }));
+  }
+  const total = getTransportDurationMinutes(item);
+  return [{
+    route: item.route || "",
+    fromStation: item.departStation || item.fromName || "",
+    toStation: item.arrivalStation || item.toName || "",
+    startTime: item.startTime || "",
+    durationHours: Math.floor(total / 60),
+    durationMinutes: total % 60,
+    durationTotalMinutes: total
+  }];
+}
+
+function transportRouteLabel(item = {}) {
+  const legs = transportLegsFromItem(item);
+  if (Array.isArray(item.segments) && legs.length > 1) {
+    const firstRoute = legs[0].route || transportMethodLabel(item.method);
+    return `${firstRoute}・共 ${legs.length} 段`;
+  }
+  return item.route || transportMethodLabel(item.method);
+}
+
+function transportLegEndTime(leg = {}) {
+  const total = Number(leg.durationTotalMinutes) || ((Number(leg.durationHours) || 0) * 60 + (Number(leg.durationMinutes) || 0));
+  return addMinutesToTime(leg.startTime, total);
+}
+
+function renderTransportLegDetails(item = {}) {
+  if (!Array.isArray(item.segments) || !item.segments.length) return "";
+  const legs = transportLegsFromItem(item);
+  return `<div class="transport-leg-summary-list">${legs.map((leg, index) => `
+    <div class="transport-leg-summary-item">
+      <span class="transport-leg-number">${index + 1}</span>
+      <div>
+        <strong>${escapeHtml(leg.route || `第 ${index + 1} 段`)}</strong>
+        <small>${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}</small>
+      </div>
+      <span>${escapeHtml(leg.startTime || "未定")}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span>
+    </div>`).join("")}</div>`;
+}
+
 function iconSvg(name, className = "app-icon") {
   const icons = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>',
     sunrise: '<path d="M4 18h16"/><path d="M6 14a6 6 0 0 1 12 0"/><path d="M12 3v3M4.9 6.9 7 9M19.1 6.9 17 9M2 13h3M19 13h3"/>',
     door: '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M9 21V6h6v15M13 13h.01"/><path d="M3 21h18"/>',
-    route: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h3a3 3 0 0 1 3 3v6a3 3 0 0 0 3 3h-1"/><path d="m16 15 3 3-3 3"/>',
-    bus: '<rect x="4" y="5" width="16" height="12" rx="3"/><path d="M7 17v2M17 17v2M7 9h10M8.5 13h.01M15.5 13h.01"/><path d="M6 9V7h12v2"/>',
-    subway: '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M8 7h8M8 11h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M8 18l-2 3M16 18l2 3M10 21h4"/>',
-    train: '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M8 7h8M8 11h8"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M8 18l-2 3M16 18l2 3M10 21h4"/>',
-    car: '<path d="M5 15h14"/><path d="M7 15l1.4-4.2A2 2 0 0 1 10.3 9h3.4a2 2 0 0 1 1.9 1.3L17 15"/><rect x="4" y="11" width="16" height="5" rx="2"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/>',
-    ferry: '<path d="M4 15.5 12 5l8 10.5"/><path d="M6.5 12h11"/><path d="M3 18c1.6 1.3 3.1 2 4.5 2s2.9-.7 4.5-2c1.6 1.3 3.1 2 4.5 2s2.9-.7 4.5-2"/>',
-    walk: '<path d="M9 5.5a1.8 1.8 0 1 0 0-.01"/><path d="M10 8.5 8.4 12l-2.2 1.4"/><path d="M10.7 9.2 13 11l2.5.2"/><path d="M9.3 12.2 11 15l-.7 5"/><path d="M12.2 11.2 13 14l2.8 2.2"/>',
+    route: '<circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="6" r="1.7"/><path d="M6.7 18h3.1a3 3 0 0 0 3-3v-6a3 3 0 0 1 3-3h1.5"/><path d="m15.5 3.5 3.5 2.5-3.5 2.5"/>',
+    bus: '<rect x="4.5" y="3.5" width="15" height="16" rx="3"/><path d="M7 7h10v6H7z"/><path d="M7 16h.01M17 16h.01M7 19.5V21M17 19.5V21"/>',
+    subway: '<path d="M7 20c-1.5-1.7-2.5-4-2.5-6.5C4.5 8.3 7.8 4 12 4s7.5 4.3 7.5 9.5c0 2.5-1 4.8-2.5 6.5"/><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 10h6M9 14h.01M15 14h.01M9 17l-2 3M15 17l2 3"/>',
+    train: '<rect x="6" y="3" width="12" height="16" rx="3"/><path d="M9 7h6M8 11h8M9 15h.01M15 15h.01M9 19l-2 2M15 19l2 2M9 21h6"/>',
+    highspeed: '<path d="M3.5 16.5h13.8c2.1 0 3.2-1.3 3.2-3.2 0-2.1-1.5-4.2-4.6-5.8L12.5 5H8.2L5 13.5"/><path d="M5 13.5h12.5M8 8h5M6 19h12"/>',
+    taxi: '<path d="M5 15.5h14"/><path d="m7 15.5 1.7-5a2 2 0 0 1 1.9-1.4h2.8a2 2 0 0 1 1.9 1.4l1.7 5"/><rect x="3.5" y="13" width="17" height="5" rx="2"/><path d="M10 9V7h4v2"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/>',
+    rideshare: '<path d="M5 15.5h14"/><path d="m7 15.5 1.7-5a2 2 0 0 1 1.9-1.4h2.8a2 2 0 0 1 1.9 1.4l1.7 5"/><rect x="3.5" y="13" width="17" height="5" rx="2"/><circle cx="12" cy="6" r="1.8"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/>',
+    car: '<path d="M5 15.5h14"/><path d="m7 15.5 1.7-5a2 2 0 0 1 1.9-1.4h2.8a2 2 0 0 1 1.9 1.4l1.7 5"/><rect x="3.5" y="13" width="17" height="5" rx="2"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/>',
+    ferry: '<path d="M5 15 7 8h10l2 7"/><path d="M9 8V5h6v3M4 15h16"/><path d="M3 18c1.5 1.2 3 1.8 4.5 1.8S10.5 19.2 12 18c1.5 1.2 3 1.8 4.5 1.8S19.5 19.2 21 18"/>',
+    walk: '<circle cx="10" cy="4.5" r="2"/><path d="m10 7 3 4 3 1M10 7 7.5 12 4 14M9 11l2.5 4-1 6M12 15l4 4"/>',
     plane: '<path d="M12 2.5c.82 0 1.4.78 1.4 1.72v5.05l7.1 4.12v2.02l-7.1-2.08v5.08l2.42 1.82v1.42L12 20.55l-3.82 1.1v-1.42l2.42-1.82v-5.08l-7.1 2.08v-2.02l7.1-4.12V4.22c0-.94.58-1.72 1.4-1.72Z" fill="currentColor" stroke="none"/>',
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
     luggage: '<path d="M7 7h10a2 2 0 0 1 2 2v10H5V9a2 2 0 0 1 2-2Z"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M9 11v5M15 11v5M7 19v2M17 19v2"/>',
@@ -330,6 +395,27 @@ function formatTransportDuration(totalMinutes) {
   return `${minutes} 分鐘`;
 }
 
+function parseOpeningHoursText(value = "") {
+  const times = String(value || "").match(/\d{1,2}:\d{2}/g) || [];
+  return {
+    start: times[0] ? times[0].padStart(5, "0") : "",
+    end: times[1] ? times[1].padStart(5, "0") : ""
+  };
+}
+
+function openingHoursParts(item = {}) {
+  const parsed = parseOpeningHoursText(item.openingHours);
+  return {
+    start: item.openingHoursStart || parsed.start || "",
+    end: item.openingHoursEnd || parsed.end || ""
+  };
+}
+
+function formatOpeningHours(start, end) {
+  if (start && end) return `${start} 至 ${end}`;
+  return start || end || "";
+}
+
 function transportDurationLabel(item) {
   return formatTransportDuration(getTransportDurationMinutes(item)) || String(item?.duration || "").trim();
 }
@@ -359,7 +445,13 @@ function formatDateTime(value) {
 
 function currency(amount, currencyCode = "TWD") {
   const n = Number(amount || 0);
-  const currencyMap = { TWD: "NT$", EUR: "€", JPY: "¥", USD: "US$", GBP: "£", KRW: "₩" };
+  const currencyMap = {
+    TWD: "NT$", JPY: "¥", KRW: "₩", CNY: "CN¥", HKD: "HK$", MOP: "MOP$",
+    SGD: "S$", MYR: "RM", THB: "฿", VND: "₫", PHP: "₱", IDR: "Rp",
+    USD: "US$", CAD: "CA$", AUD: "A$", NZD: "NZ$", EUR: "€", GBP: "£",
+    CHF: "CHF ", SEK: "SEK ", NOK: "NOK ", DKK: "DKK ", CZK: "Kč ", PLN: "zł ",
+    HUF: "Ft ", TRY: "₺", AED: "AED ", SAR: "SAR ", QAR: "QAR ", INR: "₹"
+  };
   const prefix = currencyMap[currencyCode] || `${currencyCode} `;
   return `${prefix}${new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 }).format(n)}`;
 }
@@ -799,9 +891,11 @@ function getBudgetSummary(trip) {
     push(plannedRows, "住宿", budgetTitle(item.name, item.checkInDate && item.checkOutDate ? `${item.checkInDate} - ${item.checkOutDate}` : ""), item.price, defaultCurrency, "住宿價格");
   });
   byTrip("itineraryItems").forEach((item) => {
-    const amount = parseNumber(item.budget) || parseNumber(item.ticketPrice);
-    const source = parseNumber(item.budget) ? "行程預估花費" : "門票價格";
-    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.address), amount, defaultCurrency, source);
+    const usesBudget = parseNumber(item.budget) > 0;
+    const amount = usesBudget ? parseNumber(item.budget) : parseNumber(item.ticketPrice);
+    const source = usesBudget ? "行程預估花費" : "門票價格";
+    const currencyCode = usesBudget ? (item.budgetCurrency || defaultCurrency) : (item.ticketCurrency || defaultCurrency);
+    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.address), amount, currencyCode, source);
   });
   byTrip("transportSegments").forEach((item) => {
     push(plannedRows, "交通", budgetTitle(item.method, item.fromName && item.toName ? `${item.fromName} → ${item.toName}` : item.route), item.cost, item.currency || defaultCurrency, "交通費用");
@@ -986,7 +1080,7 @@ function renderItemPreview(item) {
       <div class="badges">
         ${item.ticketRequired === "是" ? `<span class="badge amber">門票：${escapeHtml(item.ticketStatus || "未設定")}</span>` : ""}
         ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
-        ${item.priority ? `<span class="badge green">${escapeHtml(item.priority)}</span>` : ""}
+        ${parseNumber(item.budget) ? `<span class="badge green">預算 ${currency(item.budget, item.budgetCurrency || activeTrip()?.currency || "TWD")}</span>` : ""}
       </div>
       <div class="item-meta">${escapeHtml(item.notes || "")}</div>
     </div>
@@ -1142,9 +1236,11 @@ function renderTimelineItem(item) {
 
   const summaryTags = [
     item.type ? `<span class="badge">${escapeHtml(item.type)}</span>` : "",
-    item.priority ? `<span class="badge">${escapeHtml(item.priority)}</span>` : "",
     item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
-  ].filter(Boolean).slice(0, 3).join("");
+  ].filter(Boolean).join("");
+  const mapLink = item.mapUrl ? `<a class="badge blue itinerary-map-link" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">${iconSvg("pin", "inline-link-icon")} 地圖</a>` : "";
+  const ticketCurrency = item.ticketCurrency || activeTrip().currency || "TWD";
+  const budgetCurrency = item.budgetCurrency || activeTrip().currency || "TWD";
 
   return `
     <div class="timeline-item mockup-timeline-item ${expanded ? "is-expanded" : ""}">
@@ -1160,15 +1256,15 @@ function renderTimelineItem(item) {
               </div>
               <button class="more-dot-button" data-action="toggle-itinerary-details" data-id="${item.id}" aria-expanded="${expanded}" aria-label="${expanded ? "收合資訊" : "展開更多資訊"}">${iconSvg("more", "more-dots-svg")}</button>
             </div>
-            ${summaryTags ? `<div class="badges summary-badges">${summaryTags}</div>` : ""}
+            ${(summaryTags || mapLink) ? `<div class="badges summary-badges">${summaryTags}${mapLink}</div>` : ""}
             <div class="itinerary-extra ${expanded ? "open" : ""}">
               <div class="badges detail-badges">
                 ${item.openingHours ? `<span class="badge blue">營業 ${escapeHtml(item.openingHours)}</span>` : ""}
-                ${item.lastEntry ? `<span class="badge">最後入場 ${escapeHtml(item.lastEntry)}</span>` : ""}
-                ${item.budget ? `<span class="badge green">預算 ${currency(item.budget, activeTrip().currency || "TWD")}</span>` : ""}
+                ${parseNumber(item.ticketPrice) ? `<span class="badge amber">門票 ${currency(item.ticketPrice, ticketCurrency)}</span>` : ""}
+                ${parseNumber(item.budget) ? `<span class="badge green">預算 ${currency(item.budget, budgetCurrency)}</span>` : ""}
                 ${item.weatherType ? `<span class="badge">${escapeHtml(item.weatherType)}</span>` : ""}
               </div>
-              ${renderLinks(item)}
+              ${renderLinks(item, false)}
               ${item.notes ? `<div class="item-meta item-notes">${escapeHtml(item.notes)}</div>` : ""}
               <div class="expanded-actions">
                 <button class="btn small" data-action="edit-itinerary" data-id="${item.id}">編輯</button>
@@ -1189,6 +1285,7 @@ function renderTransportInline(item) {
   const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
   const methodLabel = transportMethodLabel(item.method);
   const methodIcon = transportMethodIconName(item.method);
+  const routeLabel = transportRouteLabel(item);
   const arrivalSuffix = flightLinked && item.arrivalDate && item.arrivalDate !== item.date
     ? `・抵達 ${escapeHtml(formatDateYmd(item.arrivalDate))} ${escapeHtml(item.endTime || "")}`
     : "";
@@ -1208,8 +1305,8 @@ function renderTransportInline(item) {
       </div>
       <div class="transport-inline slim-transport-row">
         <div class="transport-inline-main">
-          <span class="transport-icon">${iconSvg(methodIcon, "transport-method-svg")}</span>
-          <span><strong>${escapeHtml(methodLabel)}${item.route ? `・${escapeHtml(item.route)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
+          <span class="transport-icon transport-icon-${escapeHtml(methodIcon)}">${iconSvg(methodIcon, "transport-method-svg")}</span>
+          <span><strong>${escapeHtml(methodLabel)}${routeLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>
         </div>
         <div class="transport-inline-actions">${inlineActions}</div>
       </div>
@@ -1217,9 +1314,9 @@ function renderTransportInline(item) {
   `;
 }
 
-function renderLinks(item) {
+function renderLinks(item, includeMap = true) {
   const links = [
-    item.mapUrl ? `<a class="badge blue" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">地圖</a>` : "",
+    includeMap && item.mapUrl ? `<a class="badge blue" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">地圖</a>` : "",
     item.ticketLink ? `<a class="badge amber" href="${escapeHtml(item.ticketLink)}" target="_blank" rel="noreferrer">票券</a>` : "",
     item.website ? `<a class="badge" href="${escapeHtml(item.website)}" target="_blank" rel="noreferrer">官網</a>` : ""
   ].filter(Boolean).join("");
@@ -1235,9 +1332,9 @@ function renderPrintItineraryItem(item, currencyCode) {
   const time = [item.startTime, item.endTime].filter(Boolean).join(" – ") || "時間未定";
   const details = [
     item.openingHours ? `營業 ${item.openingHours}` : "",
-    item.lastEntry ? `最後入場 ${item.lastEntry}` : "",
     item.ticketRequired === "是" ? `門票 ${item.ticketStatus || "待確認"}` : "",
-    parseNumber(item.budget) ? `預算 ${currency(item.budget, currencyCode)}` : "",
+    parseNumber(item.ticketPrice) ? `門票 ${currency(item.ticketPrice, item.ticketCurrency || currencyCode)}` : "",
+    parseNumber(item.budget) ? `預算 ${currency(item.budget, item.budgetCurrency || currencyCode)}` : "",
     item.weatherType || ""
   ].filter(Boolean);
   return `
@@ -1254,15 +1351,20 @@ function renderPrintItineraryItem(item, currencyCode) {
 }
 
 function renderPrintTransport(item) {
+  const methodLabel = transportMethodLabel(item.method);
   const endTime = inferTransportEndTime(item);
   const time = [item.startTime, endTime].filter(Boolean).join(" – ") || "時間未定";
   const timing = transportDurationLabel(item) || (item.arrivalDate && item.arrivalDate !== item.date ? `抵達 ${formatDateYmd(item.arrivalDate)} ${endTime}` : endTime ? `抵達 ${endTime}` : "時間未填");
+  const legs = Array.isArray(item.segments) && item.segments.length
+    ? `<div class="print-tags">${transportLegsFromItem(item).map((leg, index) => `<span>${index + 1}. ${escapeHtml(leg.route || "路線未填")}｜${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}</span>`).join("")}</div>`
+    : "";
   return `
     <article class="print-entry print-transport-entry">
       <div class="print-entry-time">${escapeHtml(time)}</div>
       <div class="print-entry-body">
         <div class="print-transport-title">${escapeHtml(methodLabel)}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
         <div class="print-place">${escapeHtml(timing)}${parseNumber(item.cost) ? `｜${currency(item.cost, item.currency || activeTrip()?.currency || "TWD")}` : ""}</div>
+        ${legs}
         ${printDetail("路線", item.route)}
         ${printDetail("轉乘", item.transferInfo)}
         ${printDetail("備案", item.backup)}
@@ -1328,7 +1430,7 @@ async function exportItineraryPdf() {
 function renderTransport(trip) {
   const items = sortByDateTime(byTrip("transportSegments"));
   return `
-    ${topbar({ eyebrow: "Transport", title: "點到點交通", subtitle: "每一段交通獨立記錄起點、終點、路線、轉乘、費用、票券、行李友善度與備案。", actions: `<button class="btn primary" data-action="new-transport">＋ 新增交通</button>` })}
+    ${topbar({ eyebrow: "Transport", title: "點到點交通", subtitle: "依交通方式顯示對應欄位；大眾運輸最多可記錄五次轉乘。", actions: `<button class="btn primary" data-action="new-transport">＋ 新增交通</button>` })}
     <section class="section list">
       ${items.map(renderTransportCard).join("") || emptyBlock("還沒有交通段", "建議把每兩個行程點之間的交通都獨立記錄。")}
     </section>
@@ -1338,16 +1440,20 @@ function renderTransport(trip) {
 function renderTransportCard(item) {
   const flightLinked = item.sourceType === "flight" && item.sourceFlightId;
   const methodLabel = transportMethodLabel(item.method);
+  const methodIcon = transportMethodIconName(item.method);
   const timingLabel = transportDurationLabel(item) || (item.endTime ? `${item.startTime || ""}–${item.endTime}` : "時間未填");
   const actions = flightLinked
     ? `<div class="item-actions"><button class="btn small" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button></div>`
     : `<div class="item-actions"><button class="btn small" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="btn small danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button></div>`;
   return `
-    <article class="item">
+    <article class="item transport-detail-card">
       <div class="item-row">
-        <div>
-          <div class="item-title">${formatDate(item.date)} ${escapeHtml(item.startTime || "時間未定")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
-          <div class="item-meta">${escapeHtml(item.route || methodLabel || "交通方式未填")}</div>
+        <div class="transport-card-heading">
+          <span class="transport-card-icon transport-icon-${escapeHtml(methodIcon)}">${iconSvg(methodIcon, "transport-card-svg")}</span>
+          <div>
+            <div class="item-title">${formatDate(item.date)} ${escapeHtml(item.startTime || "時間未定")}｜${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}</div>
+            <div class="item-meta">${escapeHtml(transportRouteLabel(item) || methodLabel || "交通方式未填")}</div>
+          </div>
         </div>
         ${actions}
       </div>
@@ -1355,17 +1461,17 @@ function renderTransportCard(item) {
         <span class="badge dark">${escapeHtml(methodLabel)}</span>
         <span class="badge blue">${escapeHtml(timingLabel)}</span>
         ${flightLinked ? `<span class="badge">航班自動同步</span>` : ""}
-        <span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>
-        <span class="badge">行李友善度：${escapeHtml(item.luggageFriendly || "未填")}</span>
-        <span class="badge amber">${escapeHtml(item.bookingStatus || "票券未填")}</span>
+        ${parseNumber(item.cost) ? `<span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>` : ""}
       </div>
-      <dl class="kv">
-        <dt>上車 / 出發</dt><dd>${escapeHtml(item.departStation || "未填")}</dd>
-        <dt>下車 / 抵達</dt><dd>${escapeHtml(item.arrivalStation || "未填")}</dd>
-        <dt>轉乘資訊</dt><dd>${escapeHtml(item.transferInfo || "未填")}</dd>
-        <dt>備案</dt><dd>${escapeHtml(item.backup || "未填")}</dd>
-      </dl>
-      ${item.mapUrl ? `<div class="badges"><a class="badge blue" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">開啟地圖</a></div>` : ""}
+      ${renderTransportLegDetails(item)}
+      ${!Array.isArray(item.segments) || !item.segments.length ? `
+        <dl class="kv">
+          ${item.departStation ? `<dt>上車 / 出發</dt><dd>${escapeHtml(item.departStation)}</dd>` : ""}
+          ${item.arrivalStation ? `<dt>下車 / 抵達</dt><dd>${escapeHtml(item.arrivalStation)}</dd>` : ""}
+          ${item.transferInfo ? `<dt>轉乘資訊</dt><dd>${escapeHtml(item.transferInfo)}</dd>` : ""}
+          ${item.backup ? `<dt>備案</dt><dd>${escapeHtml(item.backup)}</dd>` : ""}
+        </dl>` : (item.backup ? `<div class="item-meta transport-backup-note">備案：${escapeHtml(item.backup)}</div>` : "")}
+      ${item.mapUrl ? `<div class="badges"><a class="badge blue" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer">開啟導航地圖</a></div>` : ""}
       ${item.notes ? `<div class="item-meta">${escapeHtml(item.notes)}</div>` : ""}
     </article>
   `;
@@ -1942,7 +2048,7 @@ async function handleAction(event) {
 
 const fieldOptions = {
   statusTrip: ["規劃中", "已確認", "旅行中", "已結束"],
-  currency: ["TWD", "EUR", "JPY", "USD", "GBP", "KRW"],
+  currency: ["TWD", "JPY", "KRW", "CNY", "HKD", "MOP", "SGD", "MYR", "THB", "VND", "PHP", "IDR", "USD", "CAD", "AUD", "NZD", "EUR", "GBP", "CHF", "SEK", "NOK", "DKK", "CZK", "PLN", "HUF", "TRY", "AED", "SAR", "QAR", "INR"],
   yesNo: ["是", "否"],
   ticketStatus: ["不需", "待購買", "已購買", "需現場買", "已預約"],
   itineraryType: ["景點", "餐廳", "咖啡廳", "點心", "購物", "交通", "住宿", "活動", "展覽", "夜景", "機場", "車站", "休息", "備案"],
@@ -2040,37 +2146,268 @@ function openTripForm(id) {
 
 function openItineraryForm(id, defaultDate) {
   const item = id ? state.itineraryItems.find((x) => x.id === id) : null;
+  const defaultCurrency = activeTrip().currency || "TWD";
   openForm({
     title: item ? "編輯行程" : "新增行程",
     fields: [
       dateField("date", "日期", true), timeField("startTime", "開始時間"), timeField("endTime", "結束時間"), selectField("type", "類型", fieldOptions.itineraryType),
       text("title", "行程名稱", true), text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), urlField("website", "官網 / 參考連結"),
-      text("openingHours", "營業時間"), text("lastEntry", "最後入場"), selectField("ticketRequired", "是否需門票", fieldOptions.yesNo), selectField("ticketStatus", "門票狀態", fieldOptions.ticketStatus),
-      numberField("ticketPrice", "門票價格"), urlField("ticketLink", "購票 / 票券連結"), numberField("budget", "預估花費"),
-      selectField("status", "狀態", fieldOptions.itemStatus), selectField("priority", "重要性", fieldOptions.priority), selectField("weatherType", "天氣條件", fieldOptions.weather), textarea("notes", "備註", true)
+      timeRangeField("openingHours", "營業時間"), selectField("ticketRequired", "是否需門票", fieldOptions.yesNo), selectField("ticketStatus", "門票狀態", fieldOptions.ticketStatus),
+      numberField("ticketPrice", "門票價格"), selectField("ticketCurrency", "門票幣值", fieldOptions.currency), urlField("ticketLink", "購票 / 票券連結"),
+      numberField("budget", "預估花費"), selectField("budgetCurrency", "預估花費幣值", fieldOptions.currency),
+      selectField("weatherType", "天氣條件", fieldOptions.weather), textarea("notes", "備註", true)
     ],
-    item: item || { date: defaultDate || activeTrip().startDate || todayISO(), type: "景點", ticketRequired: "否", ticketStatus: "不需", status: "想去", priority: "可去", weatherType: "室內" },
-    onSubmit: (data) => upsert("itineraryItems", item, data, "item")
+    item: item || { date: defaultDate || activeTrip().startDate || todayISO(), type: "景點", ticketRequired: "否", ticketStatus: "不需", ticketCurrency: defaultCurrency, budgetCurrency: defaultCurrency, weatherType: "室內" },
+    onSubmit: (data) => {
+      data.openingHoursStart = data.openingHoursStart || "";
+      data.openingHoursEnd = data.openingHoursEnd || "";
+      data.openingHours = formatOpeningHours(data.openingHoursStart, data.openingHoursEnd);
+      data.lastEntry = "";
+      data.status = "";
+      data.priority = "";
+      data.ticketCurrency = data.ticketCurrency || defaultCurrency;
+      data.budgetCurrency = data.budgetCurrency || defaultCurrency;
+      upsert("itineraryItems", item, data, "item");
+    }
   });
+}
+
+function transportDurationPickerMarkup(prefix, label, totalMinutes = 1) {
+  const safeTotal = Math.max(1, Number(totalMinutes) || 1);
+  const selectedHours = Math.floor(safeTotal / 60);
+  const selectedMinutes = safeTotal % 60;
+  const hourOptions = Array.from({ length: 73 }, (_, hour) => `<option value="${hour}" ${hour === selectedHours ? "selected" : ""}>${hour}</option>`).join("");
+  const minuteOptions = Array.from({ length: 60 }, (_, minute) => `<option value="${minute}" ${minute === selectedMinutes ? "selected" : ""}>${minute}</option>`).join("");
+  return `
+    <div class="field full transport-duration-control" data-duration-prefix="${prefix}">
+      <label>${escapeHtml(label)}</label>
+      <div class="duration-picker">
+        <label class="duration-select-wrap"><select name="${prefix}Hours" aria-label="${escapeHtml(label)}小時">${hourOptions}</select><span>小時</span></label>
+        <label class="duration-select-wrap"><select name="${prefix}Minutes" aria-label="${escapeHtml(label)}分鐘">${minuteOptions}</select><span>分鐘</span></label>
+      </div>
+      <small data-transport-duration-preview="${prefix}">${escapeHtml(formatTransportDuration(safeTotal))}</small>
+    </div>`;
+}
+
+function transportInputField(name, label, value = "", type = "text", full = false, placeholder = "") {
+  return `<div class="field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label><input type="${type}" name="${name}" value="${escapeHtml(value)}" ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ""} /></div>`;
 }
 
 function openTransportForm(id, defaultDate) {
   const existing = id ? state.transportSegments.find((x) => x.id === id) : null;
-  const item = existing ? { ...existing, method: transportMethodLabel(existing.method) } : null;
-  openForm({
-    title: item ? "編輯交通" : "新增交通",
-    fields: [
-      dateField("date", "日期", true), timeField("startTime", "出發時間"), text("fromName", "起點", true), text("toName", "終點", true), selectField("method", "交通方式", fieldOptions.transport),
-      durationField("duration", "所需時間", true), numberField("cost", "費用"), selectField("currency", "幣別", fieldOptions.currency), text("route", "路線"), text("departStation", "上車 / 出發站"),
-      text("arrivalStation", "下車 / 抵達站"), text("transferInfo", "轉乘資訊"), selectField("luggageFriendly", "行李友善度", fieldOptions.luggageFriendly),
-      selectField("bookingStatus", "票券 / 預約狀態", fieldOptions.bookingStatus), text("ticketInfo", "交通票資訊"), urlField("mapUrl", "地圖 / 導航連結"), text("backup", "備案交通"), textarea("notes", "注意事項", true)
-    ],
-    item: item || { date: defaultDate || activeTrip().startDate || todayISO(), method: "地鐵", durationHours: 0, durationMinutes: 1, durationTotalMinutes: 1, duration: "1 分鐘", currency: activeTrip().currency || "TWD", luggageFriendly: "中", bookingStatus: "不需預約" },
-    onSubmit: (data) => {
-      data.method = transportMethodLabel(data.method);
-      data.endTime = addMinutesToTime(data.startTime, data.durationTotalMinutes);
-      upsert("transportSegments", existing, data, "transport");
+  if (existing?.sourceType === "flight" && existing.sourceFlightId) {
+    openFlightForm(existing.sourceFlightId);
+    return;
+  }
+  const item = existing ? { ...existing, method: transportMethodLabel(existing.method) } : {
+    date: defaultDate || activeTrip().startDate || todayISO(),
+    method: "地鐵",
+    currency: activeTrip().currency || "TWD",
+    durationTotalMinutes: 1,
+    durationHours: 0,
+    durationMinutes: 1
+  };
+  const formId = uid("transport-form");
+  const legs = transportLegsFromItem(item);
+  while (legs.length < 6) legs.push({ route: "", fromStation: "", toStation: "", startTime: "", durationHours: 0, durationMinutes: 1, durationTotalMinutes: 1 });
+  const transferCount = Math.min(5, Math.max(0, (Array.isArray(item.segments) ? item.segments.length : 1) - 1));
+  const transferOptions = Array.from({ length: 6 }, (_, count) => `<option value="${count}" ${count === transferCount ? "selected" : ""}>${count === 0 ? "不需轉乘" : `需要 ${count} 次轉乘`}</option>`).join("");
+  const methodOptions = fieldOptions.transport.map((method) => `<option value="${escapeHtml(method)}" ${method === item.method ? "selected" : ""}>${escapeHtml(method)}</option>`).join("");
+  const currencyOptions = fieldOptions.currency.map((code) => `<option value="${code}" ${code === (item.currency || activeTrip().currency || "TWD") ? "selected" : ""}>${code}</option>`).join("");
+  const simpleTotal = getTransportDurationMinutes(item) || 1;
+  const legacyTransferNotice = existing?.transferInfo && !Array.isArray(existing.segments)
+    ? `<div class="transport-legacy-note">原本的轉乘備註：${escapeHtml(existing.transferInfo)}。重新設定轉乘段落後會自動更新。</div>`
+    : "";
+
+  const segmentCards = Array.from({ length: 6 }, (_, index) => {
+    const leg = legs[index];
+    const title = index === 0 ? "第一段" : `第 ${index} 次轉乘後`;
+    return `
+      <section class="transport-leg-editor" data-transport-leg="${index}" ${index > transferCount ? "hidden" : ""}>
+        <div class="transport-leg-editor-head"><span>${index + 1}</span><strong>${title}</strong></div>
+        <div class="form-grid">
+          ${transportInputField(`segment${index}Route`, "路線／車次", leg.route, "text", true, "例如 Metro Line 1、JR 山手線")}
+          ${transportInputField(`segment${index}From`, "上車站", leg.fromStation)}
+          ${transportInputField(`segment${index}To`, "下車站", leg.toStation)}
+          ${transportInputField(`segment${index}StartTime`, "上車時間", leg.startTime, "time")}
+          ${transportDurationPickerMarkup(`segment${index}Duration`, "所需時間", leg.durationTotalMinutes || 1)}
+        </div>
+      </section>`;
+  }).join("");
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop" data-action="close-modal">
+      <div class="modal transport-modal" role="dialog" aria-modal="true" aria-labelledby="${formId}-title" onclick="event.stopPropagation()">
+        <div class="modal-head">
+          <div><h2 id="${formId}-title">${existing ? "編輯交通" : "新增交通"}</h2><p class="subtitle">先選交通方式，表單會自動顯示需要的欄位。</p></div>
+          <div class="modal-head-actions">
+            <button type="submit" form="${formId}" class="btn primary small">儲存</button>
+            <button type="button" class="btn small" data-action="close-modal">關閉</button>
+          </div>
+        </div>
+        <form class="modal-body transport-dynamic-form" id="${formId}">
+          <div class="form-grid transport-form-basics">
+            ${transportInputField("date", "日期", item.date, "date")}
+            <div class="field"><label>交通方式</label><select name="method">${methodOptions}</select></div>
+          </div>
+
+          <section class="transport-method-section" data-transport-kind="private" hidden>
+            <div class="transport-form-section-title"><strong>路程資訊</strong><span>自駕、計程車與叫車服務</span></div>
+            <div class="form-grid">
+              ${transportInputField("privateFromName", "起點", item.fromName, "text", false, "輸入出發地點")}
+              ${transportInputField("privateToName", "終點", item.toName, "text", false, "輸入抵達地點")}
+              ${transportInputField("privateStartTime", "出發時間", item.startTime, "time")}
+              ${transportDurationPickerMarkup("privateDuration", "所需時間", simpleTotal)}
+            </div>
+          </section>
+
+          <section class="transport-method-section" data-transport-kind="transit" hidden>
+            <div class="transport-form-section-title"><strong>大眾運輸路段</strong><span>最多可記錄五次轉乘</span></div>
+            <div class="field full transport-transfer-count"><label>是否需轉乘／轉乘次數</label><select name="transferCount">${transferOptions}</select></div>
+            ${legacyTransferNotice}
+            <div class="transport-leg-editors">${segmentCards}</div>
+          </section>
+
+          <section class="transport-method-section" data-transport-kind="simple" hidden>
+            <div class="transport-form-section-title"><strong>交通資訊</strong><span>適用步行、飛機及其他交通</span></div>
+            <div class="form-grid">
+              ${transportInputField("simpleRoute", "路線／班次", item.route, "text", true, "可填航班、船班或路線名稱")}
+              ${transportInputField("simpleFromName", "起點", item.fromName)}
+              ${transportInputField("simpleToName", "終點", item.toName)}
+              ${transportInputField("simpleStartTime", "出發時間", item.startTime, "time")}
+              ${transportDurationPickerMarkup("simpleDuration", "所需時間", simpleTotal)}
+            </div>
+          </section>
+
+          <section class="transport-common-section">
+            <div class="transport-form-section-title"><strong>補充資訊</strong></div>
+            <div class="form-grid">
+              ${transportInputField("mapUrl", "導航地圖連結", item.mapUrl, "url", true)}
+              ${transportInputField("backup", "備案", item.backup, "text", true, "例如改搭計程車、步行路線")}
+              <div class="field full"><label>注意事項</label><textarea name="notes">${escapeHtml(item.notes || "")}</textarea></div>
+            </div>
+          </section>
+
+          <section class="transport-cost-section">
+            <div class="transport-form-section-title"><strong>花費</strong><span>費用統一放在表單最下方</span></div>
+            <div class="form-grid">
+              ${transportInputField("cost", "費用", item.cost || "", "number")}
+              <div class="field"><label>幣值</label><select name="currency">${currencyOptions}</select></div>
+            </div>
+          </section>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" data-action="close-modal">取消</button>
+            <button type="submit" class="btn primary">儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+
+  modalRoot.querySelectorAll("[data-action='close-modal']").forEach((el) => el.addEventListener("click", closeModal));
+  const form = modalRoot.querySelector(`#${formId}`);
+  const value = (name) => String(form.elements[name]?.value || "").trim();
+  const durationValue = (prefix) => {
+    const hours = parseNumber(form.elements[`${prefix}Hours`]?.value);
+    const minutes = parseNumber(form.elements[`${prefix}Minutes`]?.value);
+    return Math.max(1, hours * 60 + minutes);
+  };
+  const updateDurationPreviews = () => {
+    form.querySelectorAll("[data-duration-prefix]").forEach((wrap) => {
+      const prefix = wrap.dataset.durationPrefix;
+      const preview = wrap.querySelector(`[data-transport-duration-preview="${prefix}"]`);
+      if (preview) preview.textContent = formatTransportDuration(durationValue(prefix));
+    });
+  };
+  const updateTransferLegs = () => {
+    const count = Math.max(0, Math.min(5, parseNumber(form.elements.transferCount?.value)));
+    form.querySelectorAll("[data-transport-leg]").forEach((leg) => {
+      leg.hidden = Number(leg.dataset.transportLeg) > count;
+    });
+  };
+  const updateMethodSection = () => {
+    const kind = transportFormKind(value("method"));
+    form.querySelectorAll("[data-transport-kind]").forEach((section) => {
+      section.hidden = section.dataset.transportKind !== kind;
+    });
+    updateTransferLegs();
+  };
+  form.elements.method.addEventListener("change", updateMethodSection);
+  form.elements.transferCount.addEventListener("change", updateTransferLegs);
+  form.addEventListener("change", updateDurationPreviews);
+  form.addEventListener("input", updateDurationPreviews);
+  updateMethodSection();
+  updateDurationPreviews();
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const method = transportMethodLabel(value("method"));
+    const kind = transportFormKind(method);
+    const data = {
+      date: value("date") || defaultDate || activeTrip().startDate || todayISO(),
+      method,
+      mapUrl: value("mapUrl"),
+      backup: value("backup"),
+      notes: value("notes"),
+      cost: parseNumber(value("cost")),
+      currency: value("currency") || activeTrip().currency || "TWD",
+      luggageFriendly: "",
+      bookingStatus: "",
+      ticketInfo: ""
+    };
+
+    if (kind === "transit") {
+      const count = Math.max(0, Math.min(5, parseNumber(value("transferCount"))));
+      const segments = Array.from({ length: count + 1 }, (_, index) => {
+        const totalMinutes = durationValue(`segment${index}Duration`);
+        return {
+          route: value(`segment${index}Route`),
+          fromStation: value(`segment${index}From`),
+          toStation: value(`segment${index}To`),
+          startTime: value(`segment${index}StartTime`),
+          durationHours: Math.floor(totalMinutes / 60),
+          durationMinutes: totalMinutes % 60,
+          durationTotalMinutes: totalMinutes
+        };
+      });
+      const first = segments[0];
+      const last = segments.at(-1);
+      const summedMinutes = segments.reduce((sum, segment) => sum + segment.durationTotalMinutes, 0);
+      data.segments = segments;
+      data.transferCount = count;
+      data.fromName = first.fromStation;
+      data.toName = last.toStation;
+      data.startTime = first.startTime;
+      data.endTime = transportLegEndTime(last) || addMinutesToTime(first.startTime, summedMinutes);
+      data.route = segments.map((segment) => segment.route).filter(Boolean).join(" → ");
+      data.departStation = first.fromStation;
+      data.arrivalStation = last.toStation;
+      data.transferInfo = count ? segments.slice(1).map((segment, index) => `第 ${index + 1} 次轉乘：${segment.route || "路線未填"}`).join("；") : (existing?.transferInfo && !Array.isArray(existing.segments) ? existing.transferInfo : "");
+      data.durationTotalMinutes = summedMinutes;
+      data.durationHours = Math.floor(summedMinutes / 60);
+      data.durationMinutes = summedMinutes % 60;
+      data.duration = formatTransportDuration(summedMinutes);
+    } else {
+      const prefix = kind === "private" ? "private" : "simple";
+      const totalMinutes = durationValue(`${prefix}Duration`);
+      data.segments = [];
+      data.transferCount = 0;
+      data.fromName = value(`${prefix}FromName`);
+      data.toName = value(`${prefix}ToName`);
+      data.startTime = value(`${prefix}StartTime`);
+      data.endTime = addMinutesToTime(data.startTime, totalMinutes);
+      data.route = kind === "simple" ? value("simpleRoute") : "";
+      data.departStation = "";
+      data.arrivalStation = "";
+      data.transferInfo = "";
+      data.durationTotalMinutes = totalMinutes;
+      data.durationHours = Math.floor(totalMinutes / 60);
+      data.durationMinutes = totalMinutes % 60;
+      data.duration = formatTransportDuration(totalMinutes);
     }
+
+    upsert("transportSegments", existing, data, "transport");
+    closeModal();
   });
 }
 
@@ -2291,6 +2628,14 @@ function openForm({ title, fields, item, onSubmit }) {
     event.preventDefault();
     const data = {};
     for (const field of fields) {
+      if (field.type === "timeRange") {
+        const startInput = form.elements[`${field.name}Start`];
+        const endInput = form.elements[`${field.name}End`];
+        data[`${field.name}Start`] = startInput?.value || "";
+        data[`${field.name}End`] = endInput?.value || "";
+        data[field.name] = formatOpeningHours(data[`${field.name}Start`], data[`${field.name}End`]);
+        continue;
+      }
       if (field.type === "duration") {
         const hoursInput = form.elements[`${field.name}Hours`];
         const minutesInput = form.elements[`${field.name}Minutes`];
@@ -2325,6 +2670,18 @@ function renderField(field, item) {
   const full = field.full ? "full" : "";
   if (field.type === "textarea") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><textarea name="${field.name}" ${required}>${escapeHtml(value)}</textarea></div>`;
+  }
+  if (field.type === "timeRange") {
+    const parts = openingHoursParts(item);
+    return `
+      <div class="field full time-range-field">
+        <label>${escapeHtml(field.label)}</label>
+        <div class="time-range-picker">
+          <input type="time" name="${field.name}Start" value="${escapeHtml(parts.start)}" aria-label="${escapeHtml(field.label)}開始時間" />
+          <span>至</span>
+          <input type="time" name="${field.name}End" value="${escapeHtml(parts.end)}" aria-label="${escapeHtml(field.label)}結束時間" />
+        </div>
+      </div>`;
   }
   if (field.type === "duration") {
     const parts = durationPartsFromItem(item);
@@ -2361,6 +2718,7 @@ function text(name, label, full = false, required = false) { return { name, labe
 function textarea(name, label, full = false) { return { name, label, type: "textarea", full }; }
 function dateField(name, label, required = false) { return { name, label, type: "date", required }; }
 function timeField(name, label, required = false) { return { name, label, type: "time", required }; }
+function timeRangeField(name, label, required = false) { return { name, label, type: "timeRange", required, full: true }; }
 function durationField(name, label, required = false) { return { name, label, type: "duration", required, full: true }; }
 function datetimeField(name, label, required = false) { return { name, label, type: "datetime-local", required }; }
 function numberField(name, label, required = false) { return { name, label, type: "number", required }; }
