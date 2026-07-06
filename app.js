@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.13.0-free-map-preview";
+const APP_VERSION = "2.13.1-type-label-map-link";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1227,19 +1227,15 @@ function renderDayTimeline(day, dayNo, items, transports) {
 
 function renderItineraryMapPreview(item) {
   if (!item?.mapUrl) return "";
-  const typeLabel = item.type || "地點";
+  const label = item.title || item.type || "地點";
   return `
-    <a class="itinerary-map-preview" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(item.title || typeLabel)}">
+    <a class="itinerary-map-preview" href="${escapeHtml(item.mapUrl)}" target="_blank" rel="noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(label)}">
+      <span class="itinerary-map-link-icon" aria-hidden="true">${iconSvg("pin", "itinerary-map-pin-svg")}</span>
       <span class="itinerary-map-preview-copy">
-        <strong>${escapeHtml(item.title || typeLabel)}</strong>
-        <small>Google Maps・點擊開啟</small>
+        <strong>Google Maps</strong>
+        <small>開啟位置與導航</small>
       </span>
-      <span class="itinerary-map-preview-thumb" aria-hidden="true">
-        <span class="map-preview-road road-a"></span>
-        <span class="map-preview-road road-b"></span>
-        <span class="map-preview-road road-c"></span>
-        <span class="map-preview-icon">${itineraryTypeIcon(item.type)}</span>
-      </span>
+      <span class="itinerary-map-link-arrow" aria-hidden="true">${iconSvg("chevronRight", "itinerary-map-arrow-svg")}</span>
     </a>
   `;
 }
@@ -1253,7 +1249,6 @@ function renderTimelineItem(item) {
     : `<div class="time-range single"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div></div>`;
 
   const summaryTags = [
-    item.type ? `<span class="badge">${escapeHtml(item.type)}</span>` : "",
     item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
   ].filter(Boolean).join("");
   const ticketCurrency = item.ticketCurrency || activeTrip().currency || "TWD";
@@ -1264,7 +1259,10 @@ function renderTimelineItem(item) {
       <div class="timeline-time">${timeBlock}</div>
       <article class="timeline-content simplified-item-card mockup-itinerary-card">
         <div class="mockup-card-layout">
-          <div class="itinerary-type-orb">${itineraryTypeIcon(item.type)}</div>
+          <div class="itinerary-type-column">
+            <div class="itinerary-type-orb">${itineraryTypeIcon(item.type)}</div>
+            ${item.type ? `<span class="itinerary-type-label">${escapeHtml(item.type)}</span>` : ""}
+          </div>
           <div class="mockup-card-main">
             <div class="item-row simplified-item-head">
               <div class="simplified-item-copy">
