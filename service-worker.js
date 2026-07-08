@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.14.0-semantic-color-accents";
+const CACHE_NAME = "tripboard-v2.15.0-system-typography";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.14.0",
-  "./app.js?v=2.14.0",
+  "./style.css?v=2.15.0",
+  "./app.js?v=2.15.0",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",

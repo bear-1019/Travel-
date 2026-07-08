@@ -4307,3 +4307,105 @@ body .transport-card-icon[class*="transport-icon-"] {
 .home-quick-add:nth-child(2) .home-quick-add-icon { color: var(--tone-cyan); }
 .home-quick-add:nth-child(3) .home-quick-add-icon { color: var(--tone-amber); }
 .home-quick-add:nth-child(4) .home-quick-add-icon { color: var(--tone-purple); }
+
+
+/* =========================================================
+   TripBoard 2.15 — iOS-style system typography
+   Chinese: PingFang TC on Apple devices
+   Latin / numerals: SF Pro via -apple-system
+   No downloadable font files or external font service required.
+   ========================================================= */
+:root {
+  --app-ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", "Microsoft JhengHei", Arial, sans-serif;
+  --app-display-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang TC", "Helvetica Neue", "Microsoft JhengHei", Arial, sans-serif;
+  --app-number-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --ui-sans: var(--app-ui-font);
+  --display-serif: var(--app-display-font);
+  --number-serif: var(--app-number-font);
+  font-family: var(--app-ui-font);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select,
+option {
+  font-family: var(--app-ui-font) !important;
+}
+
+h1,
+h2,
+h3,
+.brand-title,
+.day-title,
+.item-title,
+.focused-date-label strong,
+.itinerary-screen-header h1,
+.topbar h1,
+.topbar h2,
+.topbar h3,
+.home-trip-select,
+.home-section-label,
+.modal-header h2,
+.page-title,
+.section-title {
+  font-family: var(--app-display-font) !important;
+  font-style: normal !important;
+  letter-spacing: -0.025em;
+}
+
+.item-title,
+.day-title,
+.brand-title,
+.home-trip-select {
+  font-weight: 700;
+}
+
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.next-focus-time,
+.next-focus-date,
+.home-trip-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.stat-value,
+.daily-routine-chip strong,
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"],
+.money-field input {
+  font-family: var(--app-number-font) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.015em;
+}
+
+.subtitle,
+.item-subtitle,
+.item-meta,
+.badge,
+.btn,
+.mini-link,
+.daily-routine-chip-label,
+.daily-routine-edit,
+.mobile-tab-label,
+.nav-label,
+label,
+.field-label {
+  font-family: var(--app-ui-font) !important;
+}
+
+/* SF/PingFang already has compact optical spacing; avoid the older serif-era tracking. */
+.item-title,
+.focused-date-label strong,
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span {
+  line-height: 1.22;
+}
