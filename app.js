@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.13.3-itinerary-card-compact-footer";
+const APP_VERSION = "2.14.0-semantic-color-accents";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -124,6 +124,17 @@ function renderTransportLegDetails(item = {}) {
       </div>
       <span>${escapeHtml(leg.startTime || "未定")}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span>
     </div>`).join("")}</div>`;
+}
+
+function semanticStatusClass(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/取消|失敗|逾期|拒絕|未付款/.test(text)) return "red";
+  if (/待|尚未|未設定|未確認|未準備|未定/.test(text)) return "amber";
+  if (/已|完成|成功|付款|購買|確認|準備完成/.test(text)) return "green";
+  if (/必去|必帶|重要/.test(text)) return "dark";
+  if (/可去|可選|一般/.test(text)) return "blue";
+  return "";
 }
 
 function iconSvg(name, className = "app-icon") {
@@ -960,7 +971,7 @@ function renderBudgetOverviewPanel(trip) {
 function renderSimpleProgressRow(label, value, icon) {
   const pct = clampPercentage(value);
   return `
-    <div class="simple-progress-row">
+    <div class="simple-progress-row simple-progress-${escapeHtml(icon)}">
       <span class="simple-progress-icon">${iconSvg(icon, "simple-progress-svg")}</span>
       <span class="simple-progress-label">${escapeHtml(label)}</span>
       <div class="progress"><span style="width:${pct}%"></span></div>
@@ -1098,7 +1109,7 @@ function renderStayPreview(stay) {
       </div>
       <div class="badges">
         <span class="badge amber">Check-in ${escapeHtml(stay.checkInTime || "未定")}</span>
-        <span class="badge">${escapeHtml(stay.paidStatus || "付款未定")}</span>
+        <span class="badge ${semanticStatusClass(stay.paidStatus || "付款未定")}">${escapeHtml(stay.paidStatus || "付款未定")}</span>
         <span class="badge">寄放行李：${escapeHtml(stay.luggageStorage || "未確認")}</span>
       </div>
       <div class="item-meta">${escapeHtml(stay.notes || "")}</div>
@@ -1246,7 +1257,7 @@ function renderTimelineItem(item) {
     : `<div class="time-range single"><div class="time-mark start"><strong>${startLabel}</strong><span class="time-dot start-dot" aria-hidden="true"></span></div></div>`;
 
   const summaryTags = [
-    item.ticketRequired === "是" ? `<span class="badge">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
+    item.ticketRequired === "是" ? `<span class="badge ${semanticStatusClass(item.ticketStatus || "待確認")}">${escapeHtml(item.ticketStatus || "門票")}</span>` : ""
   ].filter(Boolean).join("");
   const mapChip = renderItineraryMapPreview(item);
   const quickItems = [summaryTags, mapChip].filter(Boolean).join("");
@@ -1259,8 +1270,8 @@ function renderTimelineItem(item) {
       <article class="timeline-content simplified-item-card mockup-itinerary-card">
         <div class="mockup-card-layout">
           <div class="itinerary-type-column">
-            <div class="itinerary-type-orb">${itineraryTypeIcon(item.type)}</div>
-            ${item.type ? `<span class="itinerary-type-label">${escapeHtml(item.type)}</span>` : ""}
+            <div class="itinerary-type-orb" data-type="${escapeHtml(item.type || "")}">${itineraryTypeIcon(item.type)}</div>
+            ${item.type ? `<span class="itinerary-type-label" data-type="${escapeHtml(item.type || "")}">${escapeHtml(item.type)}</span>` : ""}
           </div>
           <div class="mockup-card-main">
             <div class="item-row simplified-item-head">
@@ -1476,7 +1487,7 @@ function renderTransportCard(item) {
       <div class="badges">
         <span class="badge dark">${escapeHtml(methodLabel)}</span>
         <span class="badge blue">${escapeHtml(timingLabel)}</span>
-        ${flightLinked ? `<span class="badge">航班自動同步</span>` : ""}
+        ${flightLinked ? `<span class="badge green">航班自動同步</span>` : ""}
         ${parseNumber(item.cost) ? `<span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>` : ""}
       </div>
       ${renderTransportLegDetails(item)}
@@ -1521,7 +1532,7 @@ function renderFlightCard(item) {
       <div class="badges">
         <span class="badge blue">出發 ${formatDateTime(item.departure)}</span>
         <span class="badge green">抵達 ${formatDateTime(item.arrival)}</span>
-        ${item.syncToItinerary !== false && splitLocalDateTime(item.departure).date ? `<span class="badge">已加入每日行程</span>` : ""}
+        ${item.syncToItinerary !== false && splitLocalDateTime(item.departure).date ? `<span class="badge green">已加入每日行程</span>` : ""}
         <span class="badge amber">${escapeHtml(item.checkedBaggage || "行李未填")}</span>
       </div>
       <dl class="kv">
@@ -1564,7 +1575,7 @@ function renderStayCard(item) {
         <span class="badge amber">入住 ${escapeHtml(item.checkInTime || "未填")}</span>
         <span class="badge">退房 ${escapeHtml(item.checkOutTime || "未填")}</span>
         <span class="badge green">${currency(item.price, activeTrip().currency || "TWD")}</span>
-        <span class="badge">${escapeHtml(item.paidStatus || "付款未填")}</span>
+        <span class="badge ${semanticStatusClass(item.paidStatus || "付款未填")}">${escapeHtml(item.paidStatus || "付款未填")}</span>
       </div>
       <dl class="kv">
         <dt>平台 / 訂單</dt><dd>${escapeHtml(item.platform || "未填")} / ${escapeHtml(item.bookingNumber || "未填")}</dd>

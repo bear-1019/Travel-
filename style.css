@@ -4046,3 +4046,264 @@ body[data-theme="coffee"] {
     font-size: .68rem;
   }
 }
+
+/* =========================================================
+   TripBoard 2.14.0 — restrained semantic colour accents
+   All themes receive their own harmonious accent palette.
+   ========================================================= */
+:root,
+body[data-theme="oat"] {
+  --tone-blue: #587fae;
+  --tone-green: #62886f;
+  --tone-amber: #b47d46;
+  --tone-rose: #a66975;
+  --tone-purple: #776b9e;
+  --tone-cyan: #548797;
+}
+body[data-theme="midnight"] {
+  --tone-blue: #9bc3f1;
+  --tone-green: #91cfaa;
+  --tone-amber: #edb879;
+  --tone-rose: #e8a1ae;
+  --tone-purple: #c0afe7;
+  --tone-cyan: #8bcbd8;
+}
+body[data-theme="mist"] {
+  --tone-blue: #547d9e;
+  --tone-green: #668a79;
+  --tone-amber: #aa7b4d;
+  --tone-rose: #9c6e79;
+  --tone-purple: #746e99;
+  --tone-cyan: #518494;
+}
+body[data-theme="sage"] {
+  --tone-blue: #5c7fa1;
+  --tone-green: #62866a;
+  --tone-amber: #aa8054;
+  --tone-rose: #9d7078;
+  --tone-purple: #756e94;
+  --tone-cyan: #54878b;
+}
+body[data-theme="rose"] {
+  --tone-blue: #6884a8;
+  --tone-green: #698777;
+  --tone-amber: #b17d55;
+  --tone-rose: #a35e70;
+  --tone-purple: #806e9d;
+  --tone-cyan: #5e8998;
+}
+body[data-theme="lavender"] {
+  --tone-blue: #667fa6;
+  --tone-green: #698b78;
+  --tone-amber: #ad8151;
+  --tone-rose: #9d697b;
+  --tone-purple: #735f99;
+  --tone-cyan: #578792;
+}
+body[data-theme="sky"] {
+  --tone-blue: #477ba7;
+  --tone-green: #5f8975;
+  --tone-amber: #ad7d4d;
+  --tone-rose: #9f6975;
+  --tone-purple: #726a99;
+  --tone-cyan: #4c8da4;
+}
+body[data-theme="peach"] {
+  --tone-blue: #607fa3;
+  --tone-green: #668974;
+  --tone-amber: #b77949;
+  --tone-rose: #a65f6a;
+  --tone-purple: #7d6998;
+  --tone-cyan: #5d8792;
+}
+body[data-theme="sand"] {
+  --tone-blue: #5e7895;
+  --tone-green: #6d826a;
+  --tone-amber: #a97846;
+  --tone-rose: #986970;
+  --tone-purple: #746a8d;
+  --tone-cyan: #5e8388;
+}
+body[data-theme="forest"] {
+  --tone-blue: #91bae6;
+  --tone-green: #90d0a6;
+  --tone-amber: #e4b978;
+  --tone-rose: #d99aa8;
+  --tone-purple: #b9aae0;
+  --tone-cyan: #87c8cf;
+}
+body[data-theme="ocean"] {
+  --tone-blue: #8dbde8;
+  --tone-green: #8ed0af;
+  --tone-amber: #e9b678;
+  --tone-rose: #e49ba9;
+  --tone-purple: #baa9df;
+  --tone-cyan: #83cedf;
+}
+body[data-theme="plum"] {
+  --tone-blue: #9db9e3;
+  --tone-green: #8fc7a4;
+  --tone-amber: #e1b17a;
+  --tone-rose: #eca0b1;
+  --tone-purple: #c3ace6;
+  --tone-cyan: #89c8d3;
+}
+body[data-theme="coffee"] {
+  --tone-blue: #9db6d5;
+  --tone-green: #9bc39b;
+  --tone-amber: #e0b17b;
+  --tone-rose: #d79aa2;
+  --tone-purple: #b8a7d4;
+  --tone-cyan: #8ec1c3;
+}
+body[data-theme="charcoal"] {
+  --tone-blue: #93b8e5;
+  --tone-green: #8ec7a5;
+  --tone-amber: #e4b577;
+  --tone-rose: #e29aa7;
+  --tone-purple: #baa8df;
+  --tone-cyan: #84c4d1;
+}
+
+/* Status badges: colour is used only where it carries meaning. */
+body .badge.blue,
+body a.badge.blue {
+  color: var(--tone-blue) !important;
+  background: color-mix(in srgb, var(--tone-blue) 14%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--tone-blue) 24%, transparent) !important;
+}
+body .badge.green,
+body a.badge.green {
+  color: var(--tone-green) !important;
+  background: color-mix(in srgb, var(--tone-green) 14%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--tone-green) 24%, transparent) !important;
+}
+body .badge.amber,
+body a.badge.amber {
+  color: var(--tone-amber) !important;
+  background: color-mix(in srgb, var(--tone-amber) 15%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--tone-amber) 25%, transparent) !important;
+}
+body .badge.red,
+body a.badge.red {
+  color: var(--tone-rose) !important;
+  background: color-mix(in srgb, var(--tone-rose) 14%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--tone-rose) 24%, transparent) !important;
+}
+
+/* Itinerary type orbs and labels. */
+.itinerary-type-orb[data-type],
+.itinerary-type-label[data-type] {
+  --item-tone: var(--theme-text-strong);
+  color: var(--item-tone) !important;
+  background: color-mix(in srgb, var(--item-tone) 11%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--item-tone) 20%, var(--theme-line)) !important;
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="景點"], [data-type="博物館"], [data-type="展覽"], [data-type="城堡"], [data-type="地標"]) {
+  --item-tone: var(--tone-blue);
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="餐廳"], [data-type="咖啡廳"], [data-type="點心"]) {
+  --item-tone: var(--tone-amber);
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="商店街"], [data-type="購物"]) {
+  --item-tone: var(--tone-rose);
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="住宿"], [data-type="夜景"]) {
+  --item-tone: var(--tone-purple);
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="機場"], [data-type="交通"], [data-type="車站"]) {
+  --item-tone: var(--tone-cyan);
+}
+:is(.itinerary-type-orb, .itinerary-type-label):is([data-type="活動"], [data-type="休息"]) {
+  --item-tone: var(--tone-green);
+}
+
+/* Google Maps link: a restrained blue utility accent. */
+body .itinerary-map-chip {
+  color: var(--tone-blue) !important;
+  background: color-mix(in srgb, var(--tone-blue) 10%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--tone-blue) 20%, var(--theme-line)) !important;
+}
+body .itinerary-map-chip-icon {
+  color: var(--tone-blue) !important;
+}
+
+/* Daily routine: warm sunrise, calm departure. */
+.daily-routine-chip:first-child .daily-routine-icon {
+  color: var(--tone-amber) !important;
+}
+.daily-routine-chip:last-child .daily-routine-icon {
+  color: var(--tone-green) !important;
+}
+
+/* Home progress: three muted hues, same visual weight. */
+.simple-progress-row {
+  --row-tone: var(--tone-blue);
+}
+.simple-progress-row.simple-progress-calendar { --row-tone: var(--tone-blue); }
+.simple-progress-row.simple-progress-bed { --row-tone: var(--tone-green); }
+.simple-progress-row.simple-progress-ticket { --row-tone: var(--tone-amber); }
+body .simple-progress-row .simple-progress-icon {
+  color: var(--row-tone) !important;
+  background: color-mix(in srgb, var(--row-tone) 14%, var(--theme-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--row-tone) 22%, transparent) !important;
+}
+body .simple-progress-row .progress > span {
+  background: var(--row-tone) !important;
+}
+body .simple-progress-row > strong {
+  color: var(--row-tone) !important;
+}
+
+/* Budget uses one calm green accent instead of another generic navy circle. */
+body .budget-wallet-icon {
+  color: var(--tone-green) !important;
+  background: color-mix(in srgb, var(--tone-green) 13%, var(--theme-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--tone-green) 22%, transparent) !important;
+}
+body .budget-ring-value {
+  stroke: var(--tone-green) !important;
+}
+body .budget-ring-unlimited {
+  border-color: var(--tone-green) !important;
+}
+
+/* Transport colours by mode. Only the icon receives colour in the timeline. */
+.transport-icon,
+.transport-card-icon {
+  --transport-tone: var(--tone-blue);
+}
+.transport-icon-plane,
+.transport-card-icon.transport-icon-plane { --transport-tone: var(--tone-blue); }
+.transport-icon-bus,
+.transport-card-icon.transport-icon-bus,
+.transport-icon-walk,
+.transport-card-icon.transport-icon-walk { --transport-tone: var(--tone-green); }
+.transport-icon-subway,
+.transport-card-icon.transport-icon-subway,
+.transport-icon-train,
+.transport-card-icon.transport-icon-train,
+.transport-icon-highspeed,
+.transport-card-icon.transport-icon-highspeed { --transport-tone: var(--tone-cyan); }
+.transport-icon-car,
+.transport-card-icon.transport-icon-car,
+.transport-icon-taxi,
+.transport-card-icon.transport-icon-taxi,
+.transport-icon-rideshare,
+.transport-card-icon.transport-icon-rideshare { --transport-tone: var(--tone-amber); }
+.transport-icon-ferry,
+.transport-card-icon.transport-icon-ferry { --transport-tone: var(--tone-purple); }
+body .transport-icon[class*="transport-icon-"] {
+  color: var(--transport-tone) !important;
+}
+body .transport-card-icon[class*="transport-icon-"] {
+  color: var(--transport-tone) !important;
+  background: color-mix(in srgb, var(--transport-tone) 13%, var(--theme-card)) !important;
+  border-color: color-mix(in srgb, var(--transport-tone) 22%, var(--theme-line)) !important;
+}
+
+/* Quick-add icons echo the same palette without colouring the whole button. */
+.home-quick-add:nth-child(1) .home-quick-add-icon { color: var(--tone-blue); }
+.home-quick-add:nth-child(2) .home-quick-add-icon { color: var(--tone-cyan); }
+.home-quick-add:nth-child(3) .home-quick-add-icon { color: var(--tone-amber); }
+.home-quick-add:nth-child(4) .home-quick-add-icon { color: var(--tone-purple); }
