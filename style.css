@@ -4318,7 +4318,7 @@ body .transport-card-icon[class*="transport-icon-"] {
 :root {
   --app-ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", "Microsoft JhengHei", Arial, sans-serif;
   --app-display-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang TC", "Helvetica Neue", "Microsoft JhengHei", Arial, sans-serif;
-  --app-number-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --app-number-font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", Arial, sans-serif;
   --ui-sans: var(--app-ui-font);
   --display-serif: var(--app-display-font);
   --number-serif: var(--app-number-font);
@@ -4408,4 +4408,45 @@ label,
 .transport-time-column strong,
 .transport-time-column span {
   line-height: 1.22;
+}
+
+
+/* =========================================================
+   TripBoard 2.15.1 — rounded iOS numerals
+   Use Safari's ui-rounded / SF Pro Rounded for numbers while
+   retaining PingFang TC for Chinese glyphs.
+   ========================================================= */
+:root {
+  --app-number-font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", Arial, sans-serif;
+}
+
+.time-mark strong,
+.transport-time-column strong,
+.transport-time-column span,
+.focused-date-label strong,
+.next-focus-time,
+.next-focus-date,
+.home-trip-date,
+.simple-progress-row > strong,
+.simple-budget-copy strong,
+.simple-budget-copy small,
+.budget-ring strong,
+.stat-value,
+.daily-routine-chip strong,
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"],
+.money-field input,
+.duration-picker select,
+.money-field select {
+  font-family: var(--app-number-font) !important;
+  font-style: normal !important;
+}
+
+/* Large amounts and headline values benefit from the softer rounded weight. */
+.next-focus-time,
+.simple-budget-copy strong,
+.stat-value {
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
