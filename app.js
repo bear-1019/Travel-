@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.17.3-flight-init-order-fix";
+const APP_VERSION = "2.17.4-brand-polish";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -720,7 +720,18 @@ function renderSidebar(trip) {
   return `
     <aside class="sidebar">
       <div class="brand brand-wordmark">
-        <span class="brand-mark" aria-hidden="true">${iconSvg("route", "brand-mark-svg")}</span>
+        <span class="brand-mark brand-app-icon" aria-hidden="true">
+          <svg class="brand-app-icon-svg" viewBox="0 0 48 48" focusable="false" aria-hidden="true">
+            <rect x="8" y="13" width="32" height="27" rx="7" fill="currentColor" opacity=".96"/>
+            <path d="M17 13V9.8A4.8 4.8 0 0 1 21.8 5h4.4A4.8 4.8 0 0 1 31 9.8V13" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+            <path d="M13 15v23M35 15v23" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="3"/>
+            <path d="M14.5 34.5c5.1-7.2 9.3 1.3 15.1-10.2" fill="none" stroke="#f2b45f" stroke-width="2.3" stroke-linecap="round"/>
+            <circle cx="14.2" cy="34.8" r="3.2" fill="#f2b45f" stroke="#fff7e8" stroke-width="1.7"/>
+            <path d="M31.2 15.1c-4.1 0-7.2 3.2-7.2 7.3 0 5.5 7.2 11.7 7.2 11.7s7.2-6.2 7.2-11.7c0-4.1-3.1-7.3-7.2-7.3Z" fill="#f2b45f"/>
+            <circle cx="31.2" cy="22.3" r="2.4" fill="#fff7e8"/>
+            <path d="M13 40v2M35 40v2" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
         <div>
           <div class="brand-title">TripBoard</div>
           <div class="brand-subtitle">旅行總管 PWA</div>

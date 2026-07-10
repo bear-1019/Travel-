@@ -4502,3 +4502,66 @@ input[type="datetime-local"],
 @media (max-width: 520px) {
   .flight-number-input-row { grid-template-columns: 78px minmax(0, 1fr); gap: 8px; }
 }
+
+
+/* =========================================================
+   TripBoard 2.17.4 — brand header and baggage accent polish
+   ========================================================= */
+/* Restore the warm amber baggage chips. */
+.badge.luggage {
+  background: color-mix(in srgb, #d79a58 24%, var(--theme-card, #fffdf8)) !important;
+  color: color-mix(in srgb, #875329 88%, var(--theme-text-strong, #152746)) !important;
+  border: 1px solid color-mix(in srgb, #d79a58 32%, transparent) !important;
+}
+
+/* A compact suitcase + route-pin mark that echoes the installed app icon. */
+.brand-app-icon {
+  width: 38px;
+  height: 38px;
+  color: var(--theme-text-strong, #152746);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.brand-app-icon-svg {
+  width: 36px;
+  height: 36px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 3px 7px color-mix(in srgb, var(--theme-text-strong, #152746) 12%, transparent));
+}
+
+/* Slightly larger, heavier, romantic wordmark while retaining system-only fonts. */
+.brand-wordmark {
+  gap: 11px;
+}
+.brand-wordmark .brand-title {
+  font-family: "Snell Roundhand", "Apple Chancery", "Bradley Hand", "Segoe Script", cursive !important;
+  font-size: 1.72rem !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+  letter-spacing: .012em !important;
+  color: var(--theme-text-strong, #152746) !important;
+  transform: translateY(1px);
+}
+
+/* The mobile home wordmark sits directly on the page, without a separate strip. */
+@media screen and (max-width: 960px) {
+  .view-dashboard .sidebar {
+    background: var(--theme-body-bg, #f5f0e7) !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  .view-dashboard .brand {
+    padding-top: 4px;
+    padding-bottom: 10px;
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .brand-app-icon { width: 34px; height: 34px; }
+  .brand-app-icon-svg { width: 32px; height: 32px; }
+  .brand-wordmark .brand-title { font-size: 1.58rem !important; }
+}
