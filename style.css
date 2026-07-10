@@ -4565,3 +4565,61 @@ input[type="datetime-local"],
   .brand-app-icon-svg { width: 32px; height: 32px; }
   .brand-wordmark .brand-title { font-size: 1.58rem !important; }
 }
+
+/* =========================================================
+   TripBoard 2.17.5 — larger Garamond wordmark, tighter header
+   ========================================================= */
+.brand-wordmark {
+  gap: 14px !important;
+  align-items: center !important;
+}
+.brand-app-icon {
+  width: 48px !important;
+  height: 48px !important;
+}
+.brand-app-icon-svg {
+  width: 46px !important;
+  height: 46px !important;
+}
+.brand-wordmark .brand-title {
+  font-family: Garamond, "EB Garamond", "Cormorant Garamond", "Adobe Garamond Pro", "Times New Roman", serif !important;
+  font-size: 2.05rem !important;
+  line-height: .95 !important;
+  font-weight: 800 !important;
+  font-style: normal !important;
+  letter-spacing: -.025em !important;
+  transform: none !important;
+}
+
+@media screen and (max-width: 960px) {
+  .view-dashboard .sidebar {
+    padding-top: calc(4px + var(--safe-top)) !important;
+    padding-bottom: 0 !important;
+    gap: 0 !important;
+    min-height: auto !important;
+  }
+  .view-dashboard .brand {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 5px 4px 7px !important;
+  }
+  .view-dashboard .main {
+    padding-top: 6px !important;
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .brand-wordmark { gap: 13px !important; }
+  .brand-app-icon {
+    width: 45px !important;
+    height: 45px !important;
+  }
+  .brand-app-icon-svg {
+    width: 43px !important;
+    height: 43px !important;
+  }
+  .brand-wordmark .brand-title {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+  }
+}
