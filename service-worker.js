@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.17.1-flight-airline-baggage-fixed";
+const CACHE_NAME = "tripboard-v2.17.2-flight-form-save-fix";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.17.1",
-  "./app.js?v=2.17.1",
+  "./style.css?v=2.17.2",
+  "./app.js?v=2.17.2",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",

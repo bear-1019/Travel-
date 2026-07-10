@@ -4481,3 +4481,24 @@ input[type="datetime-local"],
   color: var(--theme-muted, var(--muted));
   font-weight: 700;
 }
+
+/* TripBoard 2.17.2 — flight form save fix and combined flight fields */
+.flight-number-input-row {
+  display: grid;
+  grid-template-columns: minmax(76px, 96px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+.flight-number-input-row input { width: 100%; min-width: 0; }
+.flight-code-input[readonly] {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: var(--theme-text-strong, var(--text));
+  background: var(--theme-card-tint, rgba(17,24,39,.06)) !important;
+}
+.unit-number-field .unit-number-input { min-height: 46px; }
+.unit-number-field .unit-number-input span { white-space: nowrap; }
+@media (max-width: 520px) {
+  .flight-number-input-row { grid-template-columns: 78px minmax(0, 1fr); gap: 8px; }
+}
