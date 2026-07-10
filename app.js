@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.17.2-flight-form-save-fix";
+const APP_VERSION = "2.17.3-flight-init-order-fix";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -527,7 +527,12 @@ function flightTransportPayload(targetState, flight) {
   const departure = splitLocalDateTime(flight.departure);
   const arrival = splitLocalDateTime(flight.arrival);
   const trip = targetState.trips.find((item) => item.id === flight.tripId);
-  const airlineAndNumber = [airlineDisplayName(flight.airline), flight.flightNumber].filter(Boolean).join(" ").trim();
+  // normalizeState() runs while this module is still initializing. Avoid
+  // reading AIRLINE_CATALOG here because that const is declared later and
+  // would trigger a temporal-dead-zone ReferenceError, leaving a blank page.
+  const rawAirlineName = String(flight.airline || "").trim();
+  const safeAirlineName = rawAirlineName.replace(/\s[A-Z0-9]{2}$/, "").trim();
+  const airlineAndNumber = [safeAirlineName, flight.flightNumber].filter(Boolean).join(" ").trim();
   const bookingText = flight.bookingRef ? `PNR ${flight.bookingRef}` : "";
   const arrivalText = arrival.date && arrival.time ? `抵達 ${formatDateYmd(arrival.date)} ${arrival.time}` : "";
 
