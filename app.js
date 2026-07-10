@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.15.1-rounded-numerals";
+const APP_VERSION = "2.17.1-flight-airline-baggage-fixed";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -527,7 +527,13 @@ function flightTransportPayload(targetState, flight) {
   const departure = splitLocalDateTime(flight.departure);
   const arrival = splitLocalDateTime(flight.arrival);
   const trip = targetState.trips.find((item) => item.id === flight.tripId);
-  const airlineAndNumber = [flight.airline, flight.flightNumber].filter(Boolean).join(" ").trim();
+  // normalizeState() runs before the airline catalogue constants are initialized.
+  // Keep this startup path independent from AIRLINE_CATALOG to avoid a TDZ
+  // ReferenceError that would otherwise leave the whole app on a blank screen.
+  const startupSafeAirlineName = String(flight.airline || "")
+    .trim()
+    .replace(/\s[A-Z0-9]{2}$/, "");
+  const airlineAndNumber = [startupSafeAirlineName, flight.flightNumber].filter(Boolean).join(" ").trim();
   const bookingText = flight.bookingRef ? `PNR ${flight.bookingRef}` : "";
   const arrivalText = arrival.date && arrival.time ? `抵達 ${formatDateYmd(arrival.date)} ${arrival.time}` : "";
 
@@ -650,10 +656,10 @@ function createSeedState() {
       note: "這是一筆範例資料。你可以直接編輯、刪除，或建立自己的旅程。"
     }],
     flights: [{
-      id: uid("flight"), tripId, type: "去程", airline: "Emirates", flightNumber: "EK367 / EK073", syncToItinerary: true,
+      id: uid("flight"), tripId, type: "去程", airline: "Emirates 阿聯酋航空", airlineCode: "EK", flightNumber: "EK367 / EK073", syncToItinerary: true,
       bookingRef: "待填", fromAirport: "TPE 台北桃園", toAirport: "CDG 巴黎戴高樂",
       departure: "2026-12-23T00:30", arrival: "2026-12-23T12:25", terminal: "待確認", gate: "待確認",
-      seat: "", cabin: "Economy", checkedBaggage: "30kg", carryOn: "7kg", price: 0, notes: "確認轉機時間、線上報到與行李規定。"
+      seat: "", cabin: "Economy", checkedBaggage: 30, carryOn: 7, price: 0, notes: "確認轉機時間、線上報到與行李規定。"
     }],
     stays: [{
       id: uid("stay"), tripId, name: "Hotel Eiffel Seine", type: "飯店", checkInDate: "2026-12-23", checkOutDate: "2026-12-24",
@@ -895,7 +901,7 @@ function getBudgetSummary(trip) {
   };
 
   byTrip("flights").forEach((item) => {
-    push(plannedRows, "航班", budgetTitle(item.airline, item.flightNumber, item.fromAirport && item.toAirport ? `${item.fromAirport} → ${item.toAirport}` : ""), item.price, defaultCurrency, "航班票價");
+    push(plannedRows, "航班", budgetTitle(airlineDisplayName(item.airline), item.flightNumber, item.fromAirport && item.toAirport ? `${item.fromAirport} → ${item.toAirport}` : ""), item.price, defaultCurrency, "航班票價");
   });
   byTrip("stays").forEach((item) => {
     push(plannedRows, "住宿", budgetTitle(item.name, item.checkInDate && item.checkOutDate ? `${item.checkInDate} - ${item.checkOutDate}` : ""), item.price, defaultCurrency, "住宿價格");
@@ -1520,11 +1526,14 @@ function renderFlights(trip) {
 }
 
 function renderFlightCard(item) {
+  const airlineName = airlineDisplayName(item.airline) || "航空公司";
+  const checkedKg = baggageKg(item.checkedBaggage);
+  const carryKg = baggageKg(item.carryOn);
   return `
     <article class="item">
       <div class="item-row">
         <div>
-          <div class="item-title">${escapeHtml(item.type || "航班")}｜${escapeHtml(item.airline || "航空公司")} ${escapeHtml(item.flightNumber || "")}</div>
+          <div class="item-title">${escapeHtml(item.type || "航班")}｜${escapeHtml(airlineName)} ${escapeHtml(item.flightNumber || "")}</div>
           <div class="item-meta">${escapeHtml(item.fromAirport || "出發機場")} → ${escapeHtml(item.toAirport || "抵達機場")}</div>
         </div>
         ${rowActions("flight", "flights", item.id)}
@@ -1532,8 +1541,8 @@ function renderFlightCard(item) {
       <div class="badges">
         <span class="badge blue">出發 ${formatDateTime(item.departure)}</span>
         <span class="badge green">抵達 ${formatDateTime(item.arrival)}</span>
-        ${item.syncToItinerary !== false && splitLocalDateTime(item.departure).date ? `<span class="badge green">已加入每日行程</span>` : ""}
-        <span class="badge amber">${escapeHtml(item.checkedBaggage || "行李未填")}</span>
+        ${checkedKg ? `<span class="badge luggage">託運 ${escapeHtml(checkedKg)}kg</span>` : ""}
+        ${carryKg ? `<span class="badge luggage">手提 ${escapeHtml(carryKg)}kg</span>` : ""}
       </div>
       <dl class="kv">
         <dt>PNR</dt><dd>${escapeHtml(item.bookingRef || "未填")}</dd>
@@ -2146,7 +2155,51 @@ const AIRLINE_SUGGESTIONS = [
   "United Airlines 聯合航空 UA", "Delta Air Lines 達美航空 DL", "American Airlines 美國航空 AA", "Air Canada 加拿大航空 AC", "WestJet 西捷航空 WS", "Alaska Airlines 阿拉斯加航空 AS", "JetBlue 捷藍航空 B6", "Southwest Airlines 西南航空 WN", "Spirit Airlines 精神航空 NK", "Frontier Airlines 邊疆航空 F9", "Hawaiian Airlines 夏威夷航空 HA", "Aeromexico 墨西哥航空 AM", "Avianca 哥倫比亞航空 AV", "Copa Airlines 巴拿馬航空 CM", "LATAM Airlines 南美航空 LA", "GOL Airlines 高爾航空 G3", "Azul Brazilian Airlines 藍色巴西航空 AD",
   // 澳洲、紐西蘭與非洲
   "Qantas 澳洲航空 QF", "Jetstar Airways 捷星航空 JQ", "Virgin Australia 維珍澳洲航空 VA", "Air New Zealand 紐西蘭航空 NZ", "Fiji Airways 斐濟航空 FJ", "Ethiopian Airlines 衣索比亞航空 ET", "Kenya Airways 肯亞航空 KQ", "EgyptAir 埃及航空 MS", "South African Airways 南非航空 SA", "Royal Air Maroc 摩洛哥皇家航空 AT"
-];
+ ];
+
+function parseAirlineSuggestion(value = "") {
+  const raw = String(value || "").trim();
+  const match = raw.match(/\s([A-Z0-9]{2})$/);
+  if (!match) return { name: raw, code: "" };
+  return { name: raw.slice(0, -match[0].length).trim(), code: match[1] };
+}
+
+const AIRLINE_CATALOG = AIRLINE_SUGGESTIONS.map(parseAirlineSuggestion);
+const AIRLINE_DISPLAY_SUGGESTIONS = [...new Set(AIRLINE_CATALOG.map((item) => item.name).filter(Boolean))];
+
+function airlineInfo(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return { name: "", code: "" };
+  const direct = AIRLINE_CATALOG.find((item) => item.name === raw);
+  if (direct) return direct;
+  const parsed = parseAirlineSuggestion(raw);
+  const byName = AIRLINE_CATALOG.find((item) => item.name === parsed.name);
+  return byName || parsed;
+}
+
+function airlineDisplayName(value = "") {
+  return airlineInfo(value).name || String(value || "").trim();
+}
+
+function airlineCode(value = "") {
+  return airlineInfo(value).code || "";
+}
+
+function normalizeFlightNumber(value = "", code = "") {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!code) return raw;
+  if (!raw) return code;
+  if (raw === code) return code;
+  if (raw.startsWith(code)) return raw;
+  if (/^[A-Z0-9]{2}(?=\d)/.test(raw)) return `${code}${raw.slice(2)}`;
+  if (/^\d/.test(raw)) return `${code}${raw}`;
+  return raw;
+}
+
+function baggageKg(value) {
+  const amount = parseNumber(value);
+  return amount > 0 ? amount : 0;
+}
 
 function openTripForm(id) {
   const item = id ? state.trips.find((x) => x.id === id) : null;
@@ -2468,18 +2521,58 @@ function openDailyRoutineForm(date) {
 }
 
 function openFlightForm(id) {
-  const item = id ? state.flights.find((x) => x.id === id) : null;
+  const existing = id ? state.flights.find((x) => x.id === id) : null;
+  const info = airlineInfo(existing?.airline || "");
+  const item = existing ? {
+    ...existing,
+    airline: info.name || existing.airline || "",
+    airlineCode: existing.airlineCode || info.code || "",
+    checkedBaggage: baggageKg(existing.checkedBaggage) || "",
+    carryOn: baggageKg(existing.carryOn) || ""
+  } : null;
   openForm({
     title: item ? "編輯航班" : "新增航班",
     fields: [
-      selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), datalistField("airline", "航空公司", AIRLINE_SUGGESTIONS, false, true), text("flightNumber", "航班編號", false, true), text("bookingRef", "訂位代號 / PNR"),
+      selectField("type", "類型", ["去程", "回程", "轉機", "國內段", "其他"]), datalistField("airline", "航空公司", AIRLINE_DISPLAY_SUGGESTIONS, false, true), text("flightNumber", "航班編號", false, true), text("bookingRef", "訂位代號 / PNR"),
       datalistField("fromAirport", "出發機場", AIRPORT_SUGGESTIONS, false, true), datalistField("toAirport", "抵達機場", AIRPORT_SUGGESTIONS, false, true), datetimeField("departure", "出發時間"), datetimeField("arrival", "抵達時間"),
-      text("cabin", "艙等"), text("checkedBaggage", "託運行李"), text("carryOn", "手提行李"), numberField("price", "票價"),
+      text("cabin", "艙等"), unitNumberField("checkedBaggage", "託運行李", "kg"), unitNumberField("carryOn", "手提行李", "kg"), numberField("price", "票價"),
       checkboxField("syncToItinerary", "自動加入每日行程", true), textarea("notes", "備註", true)
     ],
-    item: item || { type: "去程", cabin: "Economy", syncToItinerary: true },
-    onSubmit: (data) => saveFlightWithTransport(item, data)
+    item: item || { type: "去程", cabin: "Economy", syncToItinerary: true, checkedBaggage: "", carryOn: "" },
+    onSubmit: (data) => {
+      const selected = airlineInfo(data.airline);
+      data.airline = selected.name || data.airline;
+      data.airlineCode = selected.code || "";
+      data.flightNumber = normalizeFlightNumber(data.flightNumber, data.airlineCode);
+      data.checkedBaggage = baggageKg(data.checkedBaggage);
+      data.carryOn = baggageKg(data.carryOn);
+      saveFlightWithTransport(existing, data);
+    }
   });
+  setupFlightAirlineAutofill();
+}
+
+function setupFlightAirlineAutofill() {
+  const form = modalRoot.querySelector("form");
+  const airlineInput = form?.elements?.airline;
+  const flightNumberInput = form?.elements?.flightNumber;
+  if (!airlineInput || !flightNumberInput) return;
+  let previousCode = airlineCode(airlineInput.value);
+  const update = () => {
+    const nextCode = airlineCode(airlineInput.value);
+    if (!nextCode) return;
+    const current = String(flightNumberInput.value || "").trim().toUpperCase();
+    if (!current || current === previousCode) {
+      flightNumberInput.value = nextCode;
+    } else if (previousCode && current.startsWith(previousCode) && previousCode !== nextCode) {
+      flightNumberInput.value = `${nextCode}${current.slice(previousCode.length)}`;
+    } else if (/^\d/.test(current)) {
+      flightNumberInput.value = `${nextCode}${current}`;
+    }
+    previousCode = nextCode;
+  };
+  airlineInput.addEventListener("input", update);
+  airlineInput.addEventListener("change", update);
 }
 
 function openStayForm(id) {
@@ -2662,7 +2755,11 @@ function openForm({ title, fields, item, onSubmit }) {
     event.preventDefault();
     const data = {};
     for (const field of fields) {
-      if (field.type === "money") {
+      if (field.type === "unitNumber") {
+    const numericValue = baggageKg(value) || "";
+    return `<div class="field ${full} unit-number-field"><label>${escapeHtml(field.label)}</label><div class="unit-number-input"><input type="number" name="${field.name}" value="${escapeHtml(numericValue)}" min="0" step="1" inputmode="numeric" placeholder="0" ${required} /><span>${escapeHtml(field.unit || "")}</span></div></div>`;
+  }
+  if (field.type === "money") {
         const amountInput = form.elements[field.amountName];
         const currencyInput = form.elements[field.currencyName];
         data[field.amountName] = parseNumber(amountInput?.value);
@@ -2697,7 +2794,7 @@ function openForm({ title, fields, item, onSubmit }) {
       const input = form.elements[field.name];
       if (!input) continue;
       if (field.type === "checkbox") data[field.name] = input.checked;
-      else if (["number", "range"].includes(field.type)) data[field.name] = parseNumber(input.value);
+      else if (["number", "range", "unitNumber"].includes(field.type)) data[field.name] = parseNumber(input.value);
       else data[field.name] = input.value.trim();
     }
     onSubmit(data);
@@ -2779,6 +2876,7 @@ function numberField(name, label, required = false) { return { name, label, type
 function urlField(name, label, required = false) { return { name, label, type: "url", required, full: true }; }
 function selectField(name, label, options, required = false) { return { name, label, type: "select", options, required }; }
 function datalistField(name, label, options, full = false, required = false) { return { name, label, type: "datalist", options, full, required }; }
+function unitNumberField(name, label, unit, full = false, required = false) { return { name, label, type: "unitNumber", unit, full, required }; }
 function rangeField(name, label, required = false) { return { name, label, type: "range", min: 0, max: 100, step: 5, required }; }
 function checkboxField(name, label, full = false) { return { name, label, type: "checkbox", full }; }
 

@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.15.1-rounded-numerals";
+const CACHE_NAME = "tripboard-v2.17.1-flight-airline-baggage-fixed";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.15.1",
-  "./app.js?v=2.15.1",
+  "./style.css?v=2.17.1",
+  "./app.js?v=2.17.1",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
