@@ -4450,3 +4450,34 @@ input[type="datetime-local"],
   font-weight: 700;
   letter-spacing: -0.025em;
 }
+
+
+/* TripBoard 2.17.0 — flight airline and baggage polish */
+.badge.luggage {
+  background: color-mix(in srgb, var(--accent-amber, #b8875b) 18%, var(--theme-card, #fff));
+  color: color-mix(in srgb, var(--accent-amber, #8a5a35) 78%, var(--theme-text-strong, #17213b));
+  border-color: color-mix(in srgb, var(--accent-amber, #b8875b) 24%, transparent);
+}
+
+.unit-number-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--theme-line, var(--line));
+  border-radius: 16px;
+  background: var(--theme-field, var(--card));
+  overflow: hidden;
+}
+
+.unit-number-input input {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  min-width: 0;
+}
+
+.unit-number-input span {
+  padding: 0 18px 0 10px;
+  color: var(--theme-muted, var(--muted));
+  font-weight: 700;
+}
