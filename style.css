@@ -4726,3 +4726,31 @@ input[type="datetime-local"],
   .flight-card-head .item-actions .btn { padding: 7px 9px; font-size: .72rem; }
   .flight-card-route { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
 }
+
+/* TripBoard 2.17.9 — compact airport route spacing */
+.flight-card-route {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.flight-card-route span {
+  flex: 0 1 auto;
+  max-width: calc(50% - 13px);
+  min-width: 0;
+}
+.flight-card-route b {
+  flex: 0 0 auto;
+  margin: 0 1px;
+}
+@media screen and (max-width: 520px) {
+  .flight-card-route {
+    display: flex;
+    gap: 4px;
+  }
+  .flight-card-route span {
+    max-width: calc(50% - 12px);
+  }
+}
