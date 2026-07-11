@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.17.7-airport-card-labels";
+const CACHE_NAME = "tripboard-v2.17.8-airport-format-unified";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.17.7",
-  "./app.js?v=2.17.7",
+  "./style.css?v=2.17.8",
+  "./app.js?v=2.17.8",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
