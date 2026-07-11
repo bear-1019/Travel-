@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.17.6-garamond-brand";
+const APP_VERSION = "2.17.7-airport-card-labels";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -1582,7 +1582,7 @@ function renderFlightCard(item) {
       <div class="flight-card-head">
         <div class="flight-card-copy">
           <div class="item-title flight-card-title" title="${escapeHtml(`${item.type || "航班"}｜${airlineName} ${item.flightNumber || ""}`)}">${escapeHtml(item.type || "航班")}｜${escapeHtml(airlineName)} ${escapeHtml(item.flightNumber || "")}</div>
-          <div class="item-meta flight-card-route"><span>${escapeHtml(item.fromAirport || "出發機場")}</span><b aria-hidden="true">→</b><span>${escapeHtml(item.toAirport || "抵達機場")}</span></div>
+          <div class="item-meta flight-card-route" title="${escapeHtml(`${item.fromAirport || "出發機場"} → ${item.toAirport || "抵達機場"}`)}"><span>${escapeHtml(airportCardLabel(item.fromAirport || "出發機場"))}</span><b aria-hidden="true">→</b><span>${escapeHtml(airportCardLabel(item.toAirport || "抵達機場"))}</span></div>
         </div>
         ${rowActions("flight", "flights", item.id)}
       </div>
@@ -2181,6 +2181,38 @@ const AIRPORT_SUGGESTIONS = [
   // 非洲常見轉機與旅遊城市
   "CAI 開羅 Cairo", "JNB 約翰尼斯堡 Johannesburg", "CPT 開普敦 Cape Town", "NBO 奈洛比 Nairobi", "ADD 阿迪斯阿貝巴 Addis Ababa", "CMN 卡薩布蘭卡 Casablanca"
 ];
+
+
+
+// Compact airport labels for flight cards: country/region・city（airport short name）.
+// The stored airport value remains unchanged so autocomplete, sync, and editing still use the full entry.
+const AIRPORT_CARD_LABELS = {
+  TPE: "臺灣・臺北（桃園）", TSA: "臺灣・臺北（松山）", KHH: "臺灣・高雄（小港）", RMQ: "臺灣・臺中（清泉崗）", TNN: "臺灣・臺南", HUN: "臺灣・花蓮", TTT: "臺灣・臺東", MZG: "臺灣・澎湖（馬公）", KNH: "臺灣・金門", MFK: "臺灣・馬祖（北竿）", LZN: "臺灣・馬祖（南竿）",
+  NRT: "日本・東京（成田）", HND: "日本・東京（羽田）", KIX: "日本・大阪（關西）", ITM: "日本・大阪（伊丹）", UKB: "日本・神戶", NGO: "日本・名古屋（中部）", FUK: "日本・福岡", CTS: "日本・札幌（新千歲）", OKA: "日本・沖繩（那霸）", SDJ: "日本・仙台", HIJ: "日本・廣島", KOJ: "日本・鹿兒島", KMJ: "日本・熊本", KMQ: "日本・金澤（小松）", TAK: "日本・高松", KMI: "日本・宮崎", OIT: "日本・大分", NGS: "日本・長崎", HKD: "日本・函館", ISG: "日本・石垣", MMY: "日本・宮古島",
+  ICN: "韓國・首爾（仁川）", GMP: "韓國・首爾（金浦）", PUS: "韓國・釜山（金海）", CJU: "韓國・濟州", TAE: "韓國・大邱", CJJ: "韓國・清州",
+  HKG: "香港・香港", MFM: "澳門・澳門", PEK: "中國・北京（首都）", PKX: "中國・北京（大興）", PVG: "中國・上海（浦東）", SHA: "中國・上海（虹橋）", CAN: "中國・廣州（白雲）", SZX: "中國・深圳（寶安）", CTU: "中國・成都（雙流）", TFU: "中國・成都（天府）", CKG: "中國・重慶（江北）", XIY: "中國・西安（咸陽）", HGH: "中國・杭州（蕭山）", NKG: "中國・南京（祿口）", XMN: "中國・廈門（高崎）", TAO: "中國・青島（膠東）", WUH: "中國・武漢（天河）", KMG: "中國・昆明（長水）",
+  SIN: "新加坡・新加坡（樟宜）", BKK: "泰國・曼谷（素萬那普）", DMK: "泰國・曼谷（廊曼）", CNX: "泰國・清邁", HKT: "泰國・普吉", KUL: "馬來西亞・吉隆坡", PEN: "馬來西亞・檳城", BKI: "馬來西亞・沙巴（亞庇）", DPS: "印尼・峇里島", CGK: "印尼・雅加達", SGN: "越南・胡志明市", HAN: "越南・河內", DAD: "越南・峴港", CXR: "越南・芽莊（金蘭）", PQC: "越南・富國島", MNL: "菲律賓・馬尼拉", CEB: "菲律賓・宿霧", CRK: "菲律賓・克拉克", KLO: "菲律賓・長灘島（卡利波）", MPH: "菲律賓・長灘島（卡提克蘭）", PNH: "柬埔寨・金邊", SAI: "柬埔寨・暹粒（吳哥）",
+  DEL: "印度・德里", BOM: "印度・孟買", CMB: "斯里蘭卡・可倫坡", KTM: "尼泊爾・加德滿都", MLE: "馬爾地夫・馬列",
+  DXB: "阿聯・杜拜（DXB）", AUH: "阿聯・阿布達比（AUH）", DOH: "卡達・杜哈", IST: "土耳其・伊斯坦堡", SAW: "土耳其・伊斯坦堡（薩比哈）", TLV: "以色列・特拉維夫（本古里安）", AMM: "約旦・安曼", RUH: "沙烏地・利雅德", JED: "沙烏地・吉達",
+  CDG: "法國・巴黎（戴高樂）", ORY: "法國・巴黎（奧利）", LHR: "英國・倫敦（希斯洛）", LGW: "英國・倫敦（蓋威克）", STN: "英國・倫敦（史坦斯特）", MAN: "英國・曼徹斯特", EDI: "英國・愛丁堡", AMS: "荷蘭・阿姆斯特丹（史基浦）", BRU: "比利時・布魯塞爾", FRA: "德國・法蘭克福", MUC: "德國・慕尼黑", BER: "德國・柏林", ZRH: "瑞士・蘇黎世", GVA: "瑞士・日內瓦", VIE: "奧地利・維也納", PRG: "捷克・布拉格", BUD: "匈牙利・布達佩斯", WAW: "波蘭・華沙", CPH: "丹麥・哥本哈根", ARN: "瑞典・斯德哥爾摩（阿蘭達）", OSL: "挪威・奧斯陸", HEL: "芬蘭・赫爾辛基", FCO: "義大利・羅馬（菲烏米奇諾）", CIA: "義大利・羅馬（錢皮諾）", MXP: "義大利・米蘭（馬爾彭薩）", LIN: "義大利・米蘭（利納特）", VCE: "義大利・威尼斯", MAD: "西班牙・馬德里", BCN: "西班牙・巴塞隆納", LIS: "葡萄牙・里斯本", OPO: "葡萄牙・波多", ATH: "希臘・雅典", DUB: "愛爾蘭・都柏林",
+  JFK: "美國・紐約（甘迺迪）", EWR: "美國・紐約（紐華克）", LGA: "美國・紐約（拉瓜地亞）", BOS: "美國・波士頓", IAD: "美國・華盛頓（杜勒斯）", MIA: "美國・邁阿密", MCO: "美國・奧蘭多", ATL: "美國・亞特蘭大", ORD: "美國・芝加哥（歐海爾）", DFW: "美國・達拉斯", IAH: "美國・休士頓", LAX: "美國・洛杉磯", SFO: "美國・舊金山", SEA: "美國・西雅圖", LAS: "美國・拉斯維加斯", HNL: "美國・夏威夷（檀香山）", GUM: "美國・關島", YVR: "加拿大・溫哥華", YYZ: "加拿大・多倫多", YUL: "加拿大・蒙特婁", MEX: "墨西哥・墨西哥城", CUN: "墨西哥・坎昆",
+  SYD: "澳洲・雪梨", MEL: "澳洲・墨爾本", BNE: "澳洲・布里斯本", PER: "澳洲・伯斯", ADL: "澳洲・阿德雷德", AKL: "紐西蘭・奧克蘭", CHC: "紐西蘭・基督城", NAN: "斐濟・楠迪", PPT: "大溪地・帕皮提",
+  CAI: "埃及・開羅", JNB: "南非・約翰尼斯堡", CPT: "南非・開普敦", NBO: "肯亞・奈洛比", ADD: "衣索比亞・阿迪斯阿貝巴", CMN: "摩洛哥・卡薩布蘭卡"
+};
+
+function airportCardLabel(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "機場未填";
+  const codeMatch = raw.match(/^([A-Z]{3})\b/i);
+  const code = codeMatch ? codeMatch[1].toUpperCase() : "";
+  if (code && AIRPORT_CARD_LABELS[code]) return AIRPORT_CARD_LABELS[code];
+
+  // Custom entries still get a shorter fallback: remove the leading IATA code
+  // and trailing English alias without changing the saved value.
+  const withoutCode = raw.replace(/^[A-Z]{3}\s+/i, "").trim();
+  const chinesePart = withoutCode.match(/^[\u3400-\u9fff・（）()\-\s]+/)?.[0]?.trim();
+  return chinesePart || withoutCode || raw;
+}
 
 const AIRLINE_SUGGESTIONS = [
   // 台灣
