@@ -4623,3 +4623,106 @@ input[type="datetime-local"],
     font-weight: 800 !important;
   }
 }
+
+/* =========================================================
+   TripBoard 2.17.6 — TWD exchange-rate conversion and stable flight cards
+   ========================================================= */
+.exchange-rate-row {
+  margin-top: 10px;
+  padding: 11px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, .72fr);
+  gap: 7px 10px;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #152746) 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-accent-soft, #eee7dd) 48%, var(--theme-card, #fffdf8));
+}
+.exchange-rate-row[hidden] { display: none !important; }
+.exchange-rate-row > label {
+  color: var(--theme-text-strong, #152746);
+  font-size: .78rem;
+  font-weight: 750;
+}
+.exchange-rate-row > input {
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+}
+.exchange-rate-row > small {
+  grid-column: 1 / -1;
+  color: var(--theme-muted, #8b867d);
+  font-size: .7rem;
+  line-height: 1.4;
+}
+.transport-exchange-rate { margin-top: 10px; }
+
+.budget-converted-amount {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  flex: 0 0 auto;
+  text-align: right;
+}
+.budget-converted-amount strong { color: var(--theme-text-strong, #152746); }
+.budget-converted-amount small {
+  color: var(--theme-muted, #8b867d);
+  font-size: .68rem;
+  white-space: nowrap;
+}
+.budget-converted-amount .rate-missing { color: var(--red, #9c4747); font-size: .78rem; }
+.budget-rate-warning {
+  margin: 8px 0 3px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--red, #9c4747) 10%, transparent);
+  color: var(--red, #9c4747);
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.flight-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+.flight-card-copy { min-width: 0; }
+.flight-card-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.flight-card-route {
+  display: grid;
+  grid-template-columns: minmax(0, auto) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  min-width: 0;
+}
+.flight-card-route span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.flight-card-route b { color: var(--theme-muted, #8b867d); font-weight: 500; }
+.flight-card-head .item-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 520px) {
+  .exchange-rate-row { grid-template-columns: 1fr; }
+  .exchange-rate-row > input { text-align: left; }
+  .exchange-rate-row > small { grid-column: 1; }
+  .flight-card-head { gap: 8px; }
+  .flight-card-head .item-actions .btn { padding: 7px 9px; font-size: .72rem; }
+  .flight-card-route { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+}

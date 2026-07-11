@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.17.5-garamond-brand";
+const APP_VERSION = "2.17.6-garamond-brand";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -471,6 +471,24 @@ function parseNumber(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+
+function exchangeRateFieldName(amountName) {
+  return `${amountName}ExchangeRate`;
+}
+
+function exchangeRateToTwd(currencyCode = "TWD", rateValue = 1) {
+  const code = String(currencyCode || "TWD").trim().toUpperCase();
+  if (code === "TWD") return 1;
+  const rate = parseNumber(rateValue);
+  return rate > 0 ? rate : 0;
+}
+
+function convertAmountToTwd(amount, currencyCode = "TWD", rateValue = 1) {
+  const numericAmount = parseNumber(amount);
+  const rate = exchangeRateToTwd(currencyCode, rateValue);
+  return rate > 0 ? numericAmount * rate : 0;
+}
+
 function daysBetween(start, end) {
   if (!start || !end) return [];
   const startParts = String(start).split("-").map(Number);
@@ -901,36 +919,50 @@ function budgetTitle(...parts) {
 }
 
 function getBudgetSummary(trip) {
-  const defaultCurrency = trip.currency || "TWD";
+  const defaultCurrency = "TWD";
   const plannedRows = [];
   const expenseRows = [];
-  const push = (rows, category, title, amount, currencyCode = defaultCurrency, source = "") => {
-    const n = parseNumber(amount);
-    if (n <= 0) return;
-    rows.push({ category, title: title || category, amount: n, currency: currencyCode || defaultCurrency, source });
+  const push = (rows, category, title, amount, currencyCode = "TWD", exchangeRate = 1, source = "") => {
+    const originalAmount = parseNumber(amount);
+    if (originalAmount <= 0) return;
+    const originalCurrency = String(currencyCode || "TWD").trim().toUpperCase();
+    const rate = exchangeRateToTwd(originalCurrency, exchangeRate);
+    const missingRate = originalCurrency !== "TWD" && rate <= 0;
+    rows.push({
+      category,
+      title: title || category,
+      amount: missingRate ? 0 : originalAmount * rate,
+      currency: "TWD",
+      originalAmount,
+      originalCurrency,
+      exchangeRate: rate,
+      missingRate,
+      source
+    });
   };
 
   byTrip("flights").forEach((item) => {
-    push(plannedRows, "航班", budgetTitle(airlineDisplayName(item.airline), item.flightNumber, item.fromAirport && item.toAirport ? `${item.fromAirport} → ${item.toAirport}` : ""), item.price, item.priceCurrency || defaultCurrency, "航班票價");
+    push(plannedRows, "航班", budgetTitle(airlineDisplayName(item.airline), item.flightNumber, item.fromAirport && item.toAirport ? `${item.fromAirport} → ${item.toAirport}` : ""), item.price, item.priceCurrency || "TWD", item.priceExchangeRate, "航班票價");
   });
   byTrip("stays").forEach((item) => {
-    push(plannedRows, "住宿", budgetTitle(item.name, item.checkInDate && item.checkOutDate ? `${item.checkInDate} - ${item.checkOutDate}` : ""), item.price, defaultCurrency, "住宿價格");
+    push(plannedRows, "住宿", budgetTitle(item.name, item.checkInDate && item.checkOutDate ? `${item.checkInDate} - ${item.checkOutDate}` : ""), item.price, item.priceCurrency || "TWD", item.priceExchangeRate, "住宿價格");
   });
   byTrip("itineraryItems").forEach((item) => {
     const usesBudget = parseNumber(item.budget) > 0;
     const amount = usesBudget ? parseNumber(item.budget) : parseNumber(item.ticketPrice);
     const source = usesBudget ? "行程預估花費" : "門票價格";
-    const currencyCode = usesBudget ? (item.budgetCurrency || defaultCurrency) : (item.ticketCurrency || defaultCurrency);
-    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.address), amount, currencyCode, source);
+    const currencyCode = usesBudget ? (item.budgetCurrency || "TWD") : (item.ticketCurrency || "TWD");
+    const exchangeRate = usesBudget ? item.budgetExchangeRate : item.ticketPriceExchangeRate;
+    push(plannedRows, item.type || "行程", budgetTitle(item.title, item.address), amount, currencyCode, exchangeRate, source);
   });
   byTrip("transportSegments").forEach((item) => {
-    push(plannedRows, "交通", budgetTitle(item.method, item.fromName && item.toName ? `${item.fromName} → ${item.toName}` : item.route), item.cost, item.currency || defaultCurrency, "交通費用");
+    push(plannedRows, "交通", budgetTitle(item.method, item.fromName && item.toName ? `${item.fromName} → ${item.toName}` : item.route), item.cost, item.currency || "TWD", item.costExchangeRate, "交通費用");
   });
   byTrip("documents").forEach((item) => {
-    push(plannedRows, item.type || "文件", budgetTitle(item.name, item.relatedTo), item.amount, item.currency || defaultCurrency, "文件 / 票券金額");
+    push(plannedRows, item.type || "文件", budgetTitle(item.name, item.relatedTo), item.amount, item.currency || "TWD", item.amountExchangeRate, "文件 / 票券金額");
   });
   byTrip("expenses").forEach((item) => {
-    push(expenseRows, item.category || "支出", item.title || item.notes || "支出紀錄", item.amount, item.currency || defaultCurrency, item.status || "支出紀錄");
+    push(expenseRows, item.category || "支出", item.title || item.notes || "支出紀錄", item.amount, item.currency || "TWD", item.amountExchangeRate, item.status || "支出紀錄");
   });
 
   const plannedTotal = plannedRows.reduce((sum, item) => sum + parseNumber(item.amount), 0);
@@ -939,7 +971,8 @@ function getBudgetSummary(trip) {
   const total = plannedTotal + expenseTotal;
   const unlimited = Boolean(trip.budgetUnlimited);
   const target = unlimited ? 0 : parseNumber(trip.budget);
-  return { plannedRows, expenseRows, plannedTotal, expenseTotal, paidTotal, total, target, unlimited, remaining: unlimited ? null : target - total, currency: defaultCurrency };
+  const missingRateCount = [...plannedRows, ...expenseRows].filter((item) => item.missingRate).length;
+  return { plannedRows, expenseRows, plannedTotal, expenseTotal, paidTotal, total, target, unlimited, remaining: unlimited ? null : target - total, currency: defaultCurrency, missingRateCount };
 }
 
 function renderBudgetSourceRows(rows, fallbackCurrency, emptyText = "尚無自動加總項目") {
@@ -950,7 +983,11 @@ function renderBudgetSourceRows(rows, fallbackCurrency, emptyText = "尚無自�
         <strong>${escapeHtml(item.category)}</strong>
         <div class="item-meta">${escapeHtml(item.title)}${item.source ? `｜${escapeHtml(item.source)}` : ""}</div>
       </div>
-      <span>${amountText(item, fallbackCurrency)}</span>
+      <span class="budget-converted-amount">
+        ${item.missingRate
+          ? `<strong class="rate-missing">待填匯率</strong><small>${currency(item.originalAmount, item.originalCurrency)}</small>`
+          : `<strong>${currency(item.amount, "TWD")}</strong>${item.originalCurrency !== "TWD" ? `<small>${currency(item.originalAmount, item.originalCurrency)} × ${item.exchangeRate}</small>` : ""}`}
+      </span>
     </div>
   `).join("");
 }
@@ -973,6 +1010,7 @@ function renderBudgetOverviewPanel(trip) {
           <div class="stat-label">自動加總</div>
           <div class="stat-value">${currency(summary.total, summary.currency)}</div>
           <div class="stat-note">已規劃 ${currency(summary.plannedTotal, summary.currency)}｜支出紀錄 ${currency(summary.expenseTotal, summary.currency)}</div>
+          ${summary.missingRateCount ? `<div class="budget-rate-warning">尚有 ${summary.missingRateCount} 筆外幣未填匯率，暫不列入總額</div>` : ""}
           ${summary.unlimited ? `<div class="budget-unlimited-line">∞ 無預算限制</div>` : `<div class="progress"><span style="width:${usagePct}%"></span></div>`}
           <div class="stat-note">${summary.unlimited ? "目前僅追蹤與加總花費，不設定上限" : `目標 ${currency(summary.target, summary.currency)}｜剩餘 ${currency(summary.remaining, summary.currency)}`}</div>
         </div>
@@ -1540,11 +1578,11 @@ function renderFlightCard(item) {
   const checkedKg = baggageKg(item.checkedBaggage);
   const carryKg = baggageKg(item.carryOn);
   return `
-    <article class="item">
-      <div class="item-row">
-        <div>
-          <div class="item-title">${escapeHtml(item.type || "航班")}｜${escapeHtml(airlineName)} ${escapeHtml(item.flightNumber || "")}</div>
-          <div class="item-meta">${escapeHtml(item.fromAirport || "出發機場")} → ${escapeHtml(item.toAirport || "抵達機場")}</div>
+    <article class="item flight-card">
+      <div class="flight-card-head">
+        <div class="flight-card-copy">
+          <div class="item-title flight-card-title" title="${escapeHtml(`${item.type || "航班"}｜${airlineName} ${item.flightNumber || ""}`)}">${escapeHtml(item.type || "航班")}｜${escapeHtml(airlineName)} ${escapeHtml(item.flightNumber || "")}</div>
+          <div class="item-meta flight-card-route"><span>${escapeHtml(item.fromAirport || "出發機場")}</span><b aria-hidden="true">→</b><span>${escapeHtml(item.toAirport || "抵達機場")}</span></div>
         </div>
         ${rowActions("flight", "flights", item.id)}
       </div>
@@ -2395,6 +2433,11 @@ function openTransportForm(id, defaultDate) {
               <select name="currency" aria-label="花費幣值">${currencyOptions}</select>
               <input type="number" name="cost" value="${escapeHtml(item.cost || "")}" inputmode="decimal" min="0" step="any" placeholder="金額" aria-label="花費金額" />
             </div>
+            <div class="exchange-rate-row transport-exchange-rate" data-transport-exchange-rate ${String(item.currency || "TWD").toUpperCase() === "TWD" ? "hidden" : ""}>
+              <label data-transport-rate-label>匯率（1 ${escapeHtml(String(item.currency || "TWD").toUpperCase())} = ? TWD）</label>
+              <input type="number" name="costExchangeRate" value="${escapeHtml(item.costExchangeRate || "")}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" />
+              <small>預算會依此匯率換算成新台幣。</small>
+            </div>
           </section>
 
           <div class="modal-actions">
@@ -2438,12 +2481,27 @@ function openTransportForm(id, defaultDate) {
     });
     updateTransferLegs();
   };
+  const updateTransportExchangeRate = () => {
+    const code = String(form.elements.currency?.value || "TWD").toUpperCase();
+    const wrap = form.querySelector("[data-transport-exchange-rate]");
+    const input = form.elements.costExchangeRate;
+    const label = form.querySelector("[data-transport-rate-label]");
+    if (!wrap || !input) return;
+    const isTwd = code === "TWD";
+    wrap.hidden = isTwd;
+    input.required = !isTwd && parseNumber(form.elements.cost?.value) > 0;
+    if (isTwd) input.value = "1";
+    if (label) label.textContent = `匯率（1 ${code} = ? TWD）`;
+  };
   form.elements.method.addEventListener("change", updateMethodSection);
   form.elements.transferCount.addEventListener("change", updateTransferLegs);
+  form.elements.currency?.addEventListener("change", updateTransportExchangeRate);
+  form.elements.cost?.addEventListener("input", updateTransportExchangeRate);
   form.addEventListener("change", updateDurationPreviews);
   form.addEventListener("input", updateDurationPreviews);
   updateMethodSection();
   updateDurationPreviews();
+  updateTransportExchangeRate();
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -2457,11 +2515,18 @@ function openTransportForm(id, defaultDate) {
       backup: value("backup"),
       notes: value("notes"),
       cost: isWalking ? 0 : parseNumber(value("cost")),
-      currency: value("currency") || activeTrip().currency || "TWD",
+      currency: (value("currency") || "TWD").toUpperCase(),
+      costExchangeRate: (value("currency") || "TWD").toUpperCase() === "TWD" ? 1 : parseNumber(value("costExchangeRate")),
       luggageFriendly: "",
       bookingStatus: "",
       ticketInfo: ""
     };
+
+    if (!isWalking && data.cost > 0 && data.currency !== "TWD" && data.costExchangeRate <= 0) {
+      toast("請填寫交通花費的外幣匯率");
+      form.elements.costExchangeRate?.focus();
+      return;
+    }
 
     if (kind === "transit") {
       const count = Math.max(0, Math.min(5, parseNumber(value("transferCount"))));
@@ -2552,7 +2617,8 @@ function openFlightForm(id) {
     flightNumberDigits: numberParts.number,
     checkedBaggage: baggageKg(existing.checkedBaggage) || "",
     carryOn: baggageKg(existing.carryOn) || "",
-    priceCurrency: existing.priceCurrency || activeTrip()?.currency || "TWD"
+    priceCurrency: existing.priceCurrency || "TWD",
+    priceExchangeRate: existing.priceExchangeRate || (String(existing.priceCurrency || "TWD").toUpperCase() === "TWD" ? 1 : "")
   } : null;
 
   openForm({
@@ -2581,7 +2647,8 @@ function openFlightForm(id) {
       flightNumberDigits: "",
       checkedBaggage: "",
       carryOn: "",
-      priceCurrency: activeTrip()?.currency || "TWD"
+      priceCurrency: "TWD",
+      priceExchangeRate: 1
     },
     onSubmit: (data) => {
       const selected = airlineInfo(data.airline);
@@ -2593,7 +2660,7 @@ function openFlightForm(id) {
       delete data.flightNumberDigits;
       data.checkedBaggage = baggageKg(data.checkedBaggage);
       data.carryOn = baggageKg(data.carryOn);
-      data.priceCurrency = data.priceCurrency || activeTrip()?.currency || "TWD";
+      data.priceCurrency = data.priceCurrency || "TWD";
       saveFlightWithTransport(existing, data);
     }
   });
@@ -2620,10 +2687,10 @@ function openStayForm(id) {
     fields: [
       text("name", "住宿名稱", true), selectField("type", "類型", fieldOptions.stayType), dateField("checkInDate", "入住日期", true), dateField("checkOutDate", "退房日期", true),
       text("address", "地址"), urlField("mapUrl", "Google Maps 連結"), timeField("checkInTime", "Check-in 時間"), timeField("checkOutTime", "Check-out 時間"),
-      text("platform", "訂房平台"), text("bookingNumber", "訂單編號"), text("roomType", "房型"), numberField("price", "價格"), selectField("paidStatus", "付款狀態", fieldOptions.paidStatus),
+      text("platform", "訂房平台"), text("bookingNumber", "訂單編號"), text("roomType", "房型"), moneyField("price", "priceCurrency", "住宿價格", fieldOptions.currency), selectField("paidStatus", "付款狀態", fieldOptions.paidStatus),
       dateField("cancellationDeadline", "取消期限"), text("luggageStorage", "是否可寄放行李"), text("contact", "聯絡方式"), textarea("notes", "備註", true)
     ],
-    item: item || { type: "飯店", paidStatus: "待付款", checkInTime: "15:00", checkOutTime: "11:00" },
+    item: item || { type: "飯店", paidStatus: "待付款", checkInTime: "15:00", checkOutTime: "11:00", priceCurrency: "TWD" },
     onSubmit: (data) => upsert("stays", item, data, "stay")
   });
 }
@@ -2647,7 +2714,7 @@ function openDocumentForm(id) {
     title: item ? "編輯文件" : "新增文件",
     fields: [
       text("name", "文件名稱", true), selectField("type", "類型", fieldOptions.docType), dateField("relatedDate", "使用日期"), text("relatedTo", "對應行程 / 地點"), text("bookingNumber", "訂單 / 票券編號"),
-      numberField("amount", "金額"), selectField("currency", "幣別", fieldOptions.currency), urlField("attachmentUrl", "附件 / QR Code 連結"), textarea("notes", "備註", true)
+      moneyField("amount", "currency", "金額", fieldOptions.currency), urlField("attachmentUrl", "附件 / QR Code 連結"), textarea("notes", "備註", true)
     ],
     item: item || { type: "門票", currency: activeTrip().currency || "TWD" },
     onSubmit: (data) => upsert("documents", item, data, "doc")
@@ -2659,7 +2726,7 @@ function openExpenseForm(id) {
   openForm({
     title: item ? "編輯支出" : "新增支出",
     fields: [
-      dateField("date", "日期", true), selectField("category", "分類", fieldOptions.expenseCategory), text("title", "名稱", true), numberField("amount", "金額", true), selectField("currency", "幣別", fieldOptions.currency),
+      dateField("date", "日期", true), selectField("category", "分類", fieldOptions.expenseCategory), text("title", "名稱", true), moneyField("amount", "currency", "金額", fieldOptions.currency, true),
       text("paidBy", "誰先付款"), text("splitWith", "分帳對象"), selectField("status", "狀態", fieldOptions.expenseStatus), textarea("notes", "備註", true)
     ],
     item: item || { date: todayISO(), category: "餐費", currency: activeTrip().currency || "TWD", status: "預估" },
@@ -2760,6 +2827,23 @@ function openForm({ title, fields, item, onSubmit }) {
   };
   form.elements.budgetUnlimited?.addEventListener("change", updateBudgetLimitState);
   updateBudgetLimitState();
+  const updateMoneyExchangeRateFields = () => {
+    form.querySelectorAll("[data-money-field]").forEach((group) => {
+      const currencyInput = group.querySelector("[data-money-currency]");
+      const rateWrap = group.querySelector("[data-exchange-rate-wrap]");
+      const rateInput = group.querySelector("[data-exchange-rate-input]");
+      const rateLabel = group.querySelector("[data-exchange-rate-label]");
+      if (!currencyInput || !rateWrap || !rateInput) return;
+      const code = String(currencyInput.value || "TWD").toUpperCase();
+      const isTwd = code === "TWD";
+      rateWrap.hidden = isTwd;
+      rateInput.required = !isTwd;
+      if (isTwd) rateInput.value = "1";
+      if (rateLabel) rateLabel.textContent = `匯率（1 ${code} = ? TWD）`;
+    });
+  };
+  form.querySelectorAll("[data-money-currency]").forEach((input) => input.addEventListener("change", updateMoneyExchangeRateFields));
+  updateMoneyExchangeRateFields();
   modalRoot.querySelectorAll("input[type='range']").forEach((input) => {
     input.addEventListener("input", () => {
       const output = modalRoot.querySelector(`[data-range-value="${input.name}"]`);
@@ -2808,8 +2892,15 @@ function openForm({ title, fields, item, onSubmit }) {
       if (field.type === "money") {
         const amountInput = form.elements[field.amountName];
         const currencyInput = form.elements[field.currencyName];
+        const rateInput = form.elements[field.rateName];
         data[field.amountName] = parseNumber(amountInput?.value);
-        data[field.currencyName] = String(currencyInput?.value || activeTrip()?.currency || "TWD").trim();
+        data[field.currencyName] = String(currencyInput?.value || "TWD").trim().toUpperCase();
+        data[field.rateName] = data[field.currencyName] === "TWD" ? 1 : parseNumber(rateInput?.value);
+        if (data[field.amountName] > 0 && data[field.currencyName] !== "TWD" && data[field.rateName] <= 0) {
+          toast(`請填寫${field.label}的外幣匯率`);
+          rateInput?.focus();
+          return;
+        }
         continue;
       }
       if (field.type === "timeRange") {
@@ -2873,13 +2964,19 @@ function renderField(field, item) {
   }
   if (field.type === "money") {
     const amountValue = item?.[field.amountName] ?? "";
-    const currencyValue = item?.[field.currencyName] || activeTrip()?.currency || "TWD";
+    const currencyValue = String(item?.[field.currencyName] || "TWD").toUpperCase();
+    const rateValue = currencyValue === "TWD" ? 1 : (item?.[field.rateName] ?? "");
     return `
-      <div class="field full money-field">
+      <div class="field full money-field" data-money-field>
         <label>${escapeHtml(field.label)}</label>
         <div class="money-input-row">
-          <select name="${field.currencyName}" aria-label="${escapeHtml(field.label)}幣值">${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === currencyValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>
-          <input type="number" name="${field.amountName}" value="${escapeHtml(amountValue)}" min="0" step="any" inputmode="decimal" placeholder="金額" aria-label="${escapeHtml(field.label)}金額" />
+          <select name="${field.currencyName}" data-money-currency aria-label="${escapeHtml(field.label)}幣值">${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === currencyValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>
+          <input type="number" name="${field.amountName}" value="${escapeHtml(amountValue)}" min="0" step="any" inputmode="decimal" placeholder="金額" aria-label="${escapeHtml(field.label)}金額" ${required} />
+        </div>
+        <div class="exchange-rate-row" data-exchange-rate-wrap ${currencyValue === "TWD" ? "hidden" : ""}>
+          <label data-exchange-rate-label>匯率（1 ${escapeHtml(currencyValue)} = ? TWD）</label>
+          <input type="number" name="${field.rateName}" data-exchange-rate-input value="${escapeHtml(rateValue)}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" aria-label="${escapeHtml(field.label)}換算匯率" />
+          <small>預算會依此匯率換算成新台幣。</small>
         </div>
       </div>`;
   }
@@ -2932,7 +3029,7 @@ function dateField(name, label, required = false) { return { name, label, type: 
 function timeField(name, label, required = false) { return { name, label, type: "time", required }; }
 function timeRangeField(name, label, required = false) { return { name, label, type: "timeRange", required, full: true }; }
 function flightNumberField(numberName, codeName, label, required = false) { return { name: numberName, numberName, codeName, label, type: "flightNumber", required, full: true }; }
-function moneyField(amountName, currencyName, label, options, required = false) { return { name: amountName, amountName, currencyName, label, type: "money", options, required, full: true }; }
+function moneyField(amountName, currencyName, label, options, required = false) { return { name: amountName, amountName, currencyName, rateName: exchangeRateFieldName(amountName), label, type: "money", options, required, full: true }; }
 function durationField(name, label, required = false) { return { name, label, type: "duration", required, full: true }; }
 function datetimeField(name, label, required = false) { return { name, label, type: "datetime-local", required }; }
 function numberField(name, label, required = false) { return { name, label, type: "number", required }; }

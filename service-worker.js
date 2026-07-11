@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.17.5-garamond-brand";
+const CACHE_NAME = "tripboard-v2.17.6-fx-flight-layout";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.17.5",
-  "./app.js?v=2.17.5",
+  "./style.css?v=2.17.6",
+  "./app.js?v=2.17.6",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
