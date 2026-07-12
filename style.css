@@ -4754,3 +4754,41 @@ input[type="datetime-local"],
     max-width: calc(50% - 12px);
   }
 }
+
+/* TripBoard 2.18.0 — align Transport and Budget page headers with other inner pages */
+@media screen and (max-width: 960px) {
+  .view-transport .topbar,
+  .view-budget .topbar {
+    width: 100%;
+    align-items: flex-start !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .view-transport .topbar > div:first-child,
+  .view-budget .topbar > div:first-child {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .view-transport .topbar .eyebrow,
+  .view-budget .topbar .eyebrow,
+  .view-transport .topbar h1,
+  .view-budget .topbar h1,
+  .view-transport .topbar .subtitle,
+  .view-budget .topbar .subtitle {
+    text-align: left !important;
+    margin-left: 0 !important;
+  }
+
+  .view-transport .topbar .actions,
+  .view-budget .topbar .actions {
+    justify-content: flex-start !important;
+  }
+}
