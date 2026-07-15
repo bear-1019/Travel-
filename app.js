@@ -157,6 +157,7 @@ function iconSvg(name, className = "app-icon") {
     bed: '<path d="M3 19v-9M21 19v-7a3 3 0 0 0-3-3h-6v10"/><path d="M3 15h18M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
     luggage: '<path d="M7 7h10a2 2 0 0 1 2 2v10H5V9a2 2 0 0 1 2-2Z"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M9 11v5M15 11v5M7 19v2M17 19v2"/>',
     ticket: '<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 6v12"/>',
+    note: '<path d="M5 3h11l3 3v15H5V3Z"/><path d="M16 3v4h4M8 11h8M8 15h8M8 19h5"/>',
     wallet: '<path d="M3 7h16a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2V7Z"/><path d="M3 7V5a2 2 0 0 1 2-2h12v4M16 12h5"/>',
     check: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7 12 3 3 7-7"/>',
     pin: '<path d="M12 21s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11Z"/><circle cx="12" cy="10" r="2.25"/>',
@@ -201,6 +202,7 @@ const navItems = [
   { key: "budget", label: "預算", icon: "wallet" },
   { key: "todos", label: "待辦", icon: "check" },
   { key: "places", label: "地點庫", icon: "pin" },
+  { key: "notes", label: "小筆記", icon: "note" },
   { key: "emergency", label: "緊急資訊", icon: "alert" },
   { key: "settings", label: "同步設定", mobileLabel: "同步", icon: "sync" },
   { key: "more", label: "更多", icon: "more" }
@@ -242,7 +244,7 @@ function setThemePreference(key, showToast = true) {
 
 const collections = [
   "trips", "flights", "stays", "itineraryItems", "transportSegments", "dailyRoutines", "packingItems",
-  "documents", "expenses", "todos", "places", "emergencyInfos"
+  "documents", "expenses", "todos", "places", "researchNotes", "emergencyInfos"
 ];
 
 let state = loadState();
@@ -643,6 +645,7 @@ function createEmptyState() {
     expenses: [],
     todos: [],
     places: [],
+    researchNotes: [],
     emergencyInfos: []
   };
 }
@@ -705,6 +708,7 @@ function createSeedState() {
     expenses: [],
     todos: [{ id: uid("todo"), tripId, title: "確認 CDG 到巴黎市區交通", dueDate: "2026-12-01", priority: "高", status: "未完成", owner: "自己", relatedTo: "抵達巴黎", notes: "比較 RER、巴士、Uber。" }],
     places: [{ id: uid("place"), tripId, name: "Café de Flore", type: "咖啡廳", city: "Paris", address: "172 Bd Saint-Germain", mapUrl: "", status: "想去", tags: "經典咖啡廳,拍照", notes: "可排早餐或下午茶。" }],
+    researchNotes: [],
     emergencyInfos: [{ id: uid("emg"), tripId, title: "歐洲緊急電話", type: "電話", value: "112", notes: "歐盟通用緊急電話。" }]
   });
 }
@@ -803,6 +807,7 @@ function renderView(trip) {
     budget: renderBudget,
     todos: renderTodos,
     places: renderPlaces,
+    notes: renderResearchNotes,
     emergency: renderEmergency,
     settings: renderSettings,
     more: renderMore
@@ -1847,6 +1852,39 @@ function renderPlaceCard(item) {
   `;
 }
 
+function renderResearchNotes(trip) {
+  const items = byTrip("researchNotes");
+  return renderCollectionPage({
+    eyebrow: "Notes",
+    title: "小筆記",
+    subtitle: "把查到的交通票價、周遊券、營業規則與其他旅遊資訊集中記在這裡。",
+    action: "new-note",
+    actionLabel: "＋ 新增筆記",
+    items,
+    emptyTitle: "還沒有筆記",
+    emptyText: "新增一則交通票價、周遊券或其他查詢資訊。",
+    renderCard: renderResearchNoteCard
+  });
+}
+
+function renderResearchNoteCard(item) {
+  return `
+    <article class="item research-note-card">
+      <div class="item-row">
+        <div>
+          <div class="item-title">${escapeHtml(item.title || "未命名筆記")}</div>
+          <div class="item-meta">${escapeHtml(item.category || "其他")}${item.updatedDate ? `｜更新 ${escapeHtml(formatDateYmd(item.updatedDate))}` : ""}</div>
+        </div>
+        ${rowActions("note", "researchNotes", item.id)}
+      </div>
+      ${item.content ? `<div class="research-note-content">${escapeHtml(item.content).replace(/\n/g, "<br>")}</div>` : ""}
+      <div class="badges">
+        <span class="badge amber">${escapeHtml(item.category || "其他")}</span>
+        ${item.sourceUrl ? `<a class="badge blue" href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noreferrer">參考連結</a>` : ""}
+      </div>
+    </article>`;
+}
+
 function renderEmergency(trip) {
   const items = byTrip("emergencyInfos");
   return renderCollectionPage({
@@ -1922,6 +1960,7 @@ function renderMore(trip) {
       items: [
         ["todos", "待辦事項", "記錄訂票、訂房與出發前任務", "check"],
         ["places", "地點庫", "收藏還沒排進日期的地點", "pin"],
+        ["notes", "小筆記", "記錄交通票價、周遊券與查詢資訊", "note"],
         ["emergency", "緊急資訊", "保險、聯絡方式與緊急電話", "alert"],
         ["settings", "同步與備份", "Google Sheets、JSON 匯出與本機資料", "sync"]
       ]
@@ -2100,6 +2139,8 @@ async function handleAction(event) {
     "edit-todo": () => openTodoForm(id),
     "new-place": () => openPlaceForm(),
     "edit-place": () => openPlaceForm(id),
+    "new-note": () => openResearchNoteForm(),
+    "edit-note": () => openResearchNoteForm(id),
     "new-emergency": () => openEmergencyForm(),
     "edit-emergency": () => openEmergencyForm(id),
     "delete": () => deleteRecord(collection, id),
@@ -2152,6 +2193,7 @@ const fieldOptions = {
   taskPriority: ["高", "中", "低"],
   placeType: ["景點", "餐廳", "咖啡廳", "購物", "飯店", "車站", "機場", "活動", "備案", "其他"],
   placeStatus: ["想去", "已排入", "已去過", "取消"],
+  noteCategory: ["交通票價", "周遊券", "景點資訊", "餐廳資訊", "購物資訊", "行前提醒", "其他"],
   emergencyType: ["電話", "地址", "保險", "醫療", "信用卡", "大使館/辦事處", "其他"]
 };
 
@@ -2823,6 +2865,22 @@ function openPlaceForm(id) {
     ],
     item: item || { type: "景點", status: "想去" },
     onSubmit: (data) => upsert("places", item, data, "place")
+  });
+}
+
+function openResearchNoteForm(id) {
+  const item = id ? state.researchNotes.find((x) => x.id === id) : null;
+  openForm({
+    title: item ? "編輯筆記" : "新增筆記",
+    fields: [
+      text("title", "標題", true, true),
+      selectField("category", "分類", fieldOptions.noteCategory),
+      textarea("content", "筆記內容", true),
+      urlField("sourceUrl", "參考連結"),
+      dateField("updatedDate", "資料更新日期")
+    ],
+    item: item || { category: "交通票價", updatedDate: todayISO() },
+    onSubmit: (data) => upsert("researchNotes", item, data, "note")
   });
 }
 

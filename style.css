@@ -4792,3 +4792,18 @@ input[type="datetime-local"],
     justify-content: flex-start !important;
   }
 }
+
+/* TripBoard 2.18.1 — research notes */
+.research-note-card { gap: 12px; }
+.research-note-content {
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-card-tint, #eee7dd) 52%, transparent);
+  color: var(--theme-text, #31425a);
+  line-height: 1.65;
+  white-space: normal;
+  word-break: break-word;
+}
+@media screen and (max-width: 520px) {
+  .research-note-content { padding: 12px; font-size: .88rem; }
+}

@@ -1,9 +1,9 @@
-const CACHE_NAME = "tripboard-v2.18.0-page-header-align";
+const CACHE_NAME = "tripboard-v2.18.1-page-header-align";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=2.18.0",
-  "./app.js?v=2.18.0",
+  "./style.css?v=2.18.1",
+  "./app.js?v=2.18.1",
   "./supabase-client.js",
   "./supabase-config.js",
   "./manifest.json",
