@@ -1,7 +1,7 @@
 import { hasSupabaseConfig, getSupabaseClient } from "./supabase-client.js";
 
 const STORAGE_KEY = "tripboard_state_v1";
-const APP_VERSION = "2.18.0-page-header-align";
+const APP_VERSION = "2.18.2-transport-polish";
 const GOOGLE_SYNC_SETTINGS_KEY = "tripboard_google_sync_v1";
 const THEME_STORAGE_KEY = "tripboard_theme_v1";
 
@@ -50,6 +50,8 @@ function transportMethodIconName(method = "") {
       return "subway";
     case "公車":
       return "bus";
+    case "電車":
+      return "tram";
     case "火車":
       return "train";
     case "高鐵":
@@ -72,7 +74,7 @@ function transportMethodIconName(method = "") {
 function transportFormKind(method = "") {
   const normalized = normalizeTransportMethod(method);
   if (["自駕", "計程車", "Uber"].includes(normalized)) return "private";
-  if (["公車", "地鐵", "火車", "高鐵", "船"].includes(normalized)) return "transit";
+  if (["公車", "電車", "地鐵", "火車", "高鐵", "船"].includes(normalized)) return "transit";
   return "simple";
 }
 
@@ -145,6 +147,7 @@ function iconSvg(name, className = "app-icon") {
     door: '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M9 21V6h6v15M13 13h.01"/><path d="M3 21h18"/>',
     route: '<circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="6" r="1.7"/><path d="M6.7 18h3.1a3 3 0 0 0 3-3v-6a3 3 0 0 1 3-3h1.5"/><path d="m15.5 3.5 3.5 2.5-3.5 2.5"/>',
     bus: '<rect x="4.5" y="3.5" width="15" height="16" rx="3"/><path d="M7 7h10v6H7z"/><path d="M7 16h.01M17 16h.01M7 19.5V21M17 19.5V21"/>',
+    tram: '<path d="M8 3h8M12 3v3"/><rect x="5" y="6" width="14" height="13" rx="3"/><path d="M8 9h8v5H8zM8 17h.01M16 17h.01M8 19l-2 2M16 19l2 2M8 21h8"/>',
     subway: '<path d="M7 20c-1.5-1.7-2.5-4-2.5-6.5C4.5 8.3 7.8 4 12 4s7.5 4.3 7.5 9.5c0 2.5-1 4.8-2.5 6.5"/><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 10h6M9 14h.01M15 14h.01M9 17l-2 3M15 17l2 3"/>',
     train: '<rect x="6" y="3" width="12" height="16" rx="3"/><path d="M9 7h6M8 11h8M9 15h.01M15 15h.01M9 19l-2 2M15 19l2 2M9 21h6"/>',
     highspeed: '<path d="M3.5 16.5h13.8c2.1 0 3.2-1.3 3.2-3.2 0-2.1-1.5-4.2-4.6-5.8L12.5 5H8.2L5 13.5"/><path d="M5 13.5h12.5M8 8h5M6 19h12"/>',
@@ -453,6 +456,19 @@ function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+}
+
+const CURRENCY_NAMES = {
+  TWD: "新台幣", JPY: "日圓", KRW: "韓元", CNY: "人民幣", HKD: "港幣", MOP: "澳門幣",
+  SGD: "新加坡幣", MYR: "馬來西亞令吉", THB: "泰銖", VND: "越南盾", PHP: "菲律賓披索", IDR: "印尼盾",
+  USD: "美元", CAD: "加幣", AUD: "澳幣", NZD: "紐西蘭幣", EUR: "歐元", GBP: "英鎊", CHF: "瑞士法郎",
+  SEK: "瑞典克朗", NOK: "挪威克朗", DKK: "丹麥克朗", CZK: "捷克克朗", PLN: "波蘭茲羅提", HUF: "匈牙利福林",
+  TRY: "土耳其里拉", AED: "阿聯迪拉姆", SAR: "沙烏地里亞爾", QAR: "卡達里亞爾", INR: "印度盧比"
+};
+
+function currencyOptionLabel(code = "") {
+  const normalized = String(code || "").toUpperCase();
+  return CURRENCY_NAMES[normalized] ? `${normalized}｜${CURRENCY_NAMES[normalized]}` : normalized;
 }
 
 function currency(amount, currencyCode = "TWD") {
@@ -1373,11 +1389,11 @@ function renderTransportInline(item) {
     ? `・抵達 ${escapeHtml(formatDateYmd(item.arrivalDate))} ${escapeHtml(item.endTime || "")}`
     : "";
   const inlineActions = flightLinked
-    ? `<button class="mini-link" data-action="edit-flight" data-id="${item.sourceFlightId}">編輯航班</button>`
-    : `<button class="mini-link" data-action="edit-transport" data-id="${item.id}">編輯</button><button class="mini-link danger" data-action="delete" data-collection="transportSegments" data-id="${item.id}">刪除</button>`;
+    ? `<button class="transport-more-button" data-action="edit-flight" data-id="${item.sourceFlightId}" aria-label="編輯航班">⋯</button>`
+    : `<button class="transport-more-button" data-action="edit-transport" data-id="${item.id}" aria-label="編輯交通">⋯</button>`;
   const transportCopy = legs.length
-    ? `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}・共 ${legs.length} 段</strong><span class="transport-inline-leg-list">${legs.map((leg) => `<small><span>${leg.route ? `${escapeHtml(leg.route)}｜` : ""}${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}${leg.startTime ? `・${escapeHtml(leg.startTime)}` : ""}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span></small>`).join("")}</span>${parseNumber(item.cost) ? `<em>${currency(item.cost, item.currency || "TWD")}</em>` : ""}</span>`
-    : `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}${routeLabel && routeLabel !== methodLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : ""}</small></span>`;
+    ? `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}・共 ${legs.length} 段</strong><span class="transport-inline-leg-list">${legs.map((leg) => `<small><span>${leg.route ? `${escapeHtml(leg.route)}｜` : ""}${escapeHtml(leg.fromStation || "上車站未填")} → ${escapeHtml(leg.toStation || "下車站未填")}${leg.startTime ? `・${escapeHtml(leg.startTime)}` : ""}${leg.durationTotalMinutes ? `・${escapeHtml(formatTransportDuration(leg.durationTotalMinutes))}` : ""}</span></small>`).join("")}</span>${item.transportPassEligible ? `<em class="transport-pass-note">可使用交通票</em>` : (parseNumber(item.cost) ? `<em>${currency(item.cost, item.currency || "TWD")}</em>` : "")}</span>`
+    : `<span class="transport-inline-copy"><strong>${escapeHtml(methodLabel)}${routeLabel && routeLabel !== methodLabel ? `・${escapeHtml(routeLabel)}` : ""}</strong><small>${escapeHtml(item.fromName || "起點")} → ${escapeHtml(item.toName || "終點")}${transportDurationLabel(item) ? `・${escapeHtml(transportDurationLabel(item))}` : ""}${arrivalSuffix}${item.transportPassEligible ? `・可使用交通票` : (parseNumber(item.cost) ? `・${currency(item.cost, item.currency || "TWD")}` : "")}</small></span>`;
   return `
     <div class="timeline-transport-item ${legs.length ? "has-transfer-legs" : ""}">
       <div class="transport-time-column">
@@ -1547,7 +1563,7 @@ function renderTransportCard(item) {
         <span class="badge dark">${escapeHtml(methodLabel)}</span>
         <span class="badge blue">${escapeHtml(timingLabel)}</span>
         ${flightLinked ? `<span class="badge green">航班自動同步</span>` : ""}
-        ${parseNumber(item.cost) ? `<span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>` : ""}
+        ${item.transportPassEligible ? `<span class="badge green">可使用交通票</span>` : (parseNumber(item.cost) ? `<span class="badge green">${currency(item.cost, item.currency || "TWD")}</span>` : "")}
       </div>
       ${renderTransportLegDetails(item)}
       ${!Array.isArray(item.segments) || !item.segments.length ? `
@@ -2180,7 +2196,7 @@ const fieldOptions = {
   itemStatus: ["想去", "已排入", "已預約", "已完成", "取消"],
   priority: ["必去", "可去", "備案"],
   weather: ["室內", "室外", "雨天備案", "天氣好再去"],
-  transport: ["步行", "地鐵", "公車", "火車", "高鐵", "Uber", "計程車", "自駕", "飛機", "船", "其他"],
+  transport: ["步行", "地鐵", "公車", "電車", "火車", "高鐵", "Uber", "計程車", "自駕", "飛機", "船", "其他"],
   luggageFriendly: ["高", "中", "低", "未知"],
   bookingStatus: ["不需預約", "待購票", "已購票", "需訂位", "已訂位"],
   stayType: ["飯店", "Airbnb", "公寓", "青旅", "民宿", "朋友家", "其他"],
@@ -2456,7 +2472,7 @@ function openTransportForm(id, defaultDate) {
   const transferCount = Math.min(5, Math.max(0, (Array.isArray(item.segments) ? item.segments.length : 1) - 1));
   const transferOptions = Array.from({ length: 6 }, (_, count) => `<option value="${count}" ${count === transferCount ? "selected" : ""}>${count === 0 ? "不需轉乘" : `需要 ${count} 次轉乘`}</option>`).join("");
   const methodOptions = fieldOptions.transport.map((method) => `<option value="${escapeHtml(method)}" ${method === item.method ? "selected" : ""}>${escapeHtml(method)}</option>`).join("");
-  const currencyOptions = fieldOptions.currency.map((code) => `<option value="${code}" ${code === (item.currency || activeTrip().currency || "TWD") ? "selected" : ""}>${code}</option>`).join("");
+  const currencyOptions = fieldOptions.currency.map((code) => `<option value="${code}" ${code === (item.currency || activeTrip().currency || "TWD") ? "selected" : ""}>${escapeHtml(currencyOptionLabel(code))}</option>`).join("");
   const simpleTotal = getTransportDurationMinutes(item) || 1;
   const legacyTransferNotice = existing?.transferInfo && !Array.isArray(existing.segments)
     ? `<div class="transport-legacy-note">原本的轉乘備註：${escapeHtml(existing.transferInfo)}。重新設定轉乘段落後會自動更新。</div>`
@@ -2533,7 +2549,8 @@ function openTransportForm(id, defaultDate) {
 
           <section class="transport-cost-section" data-hide-for-walk="true">
             <div class="transport-form-section-title"><strong>花費</strong></div>
-            <div class="money-input-row transport-money-row">
+            <label class="checkbox-row transport-pass-checkbox"><input type="checkbox" name="transportPassEligible" ${item.transportPassEligible ? "checked" : ""} /> 可使用交通票（費用自動設為 0）</label>
+            <div class="money-input-row transport-money-row" data-transport-money-row>
               <select name="currency" aria-label="花費幣值">${currencyOptions}</select>
               <input type="number" name="cost" value="${escapeHtml(item.cost || "")}" inputmode="decimal" min="0" step="any" placeholder="金額" aria-label="花費金額" />
             </div>
@@ -2590,17 +2607,28 @@ function openTransportForm(id, defaultDate) {
     const wrap = form.querySelector("[data-transport-exchange-rate]");
     const input = form.elements.costExchangeRate;
     const label = form.querySelector("[data-transport-rate-label]");
+    const passEligible = Boolean(form.elements.transportPassEligible?.checked);
+    const moneyRow = form.querySelector("[data-transport-money-row]");
+    const costInput = form.elements.cost;
+    const currencyInput = form.elements.currency;
+    if (costInput) {
+      if (passEligible) costInput.value = "0";
+      costInput.disabled = passEligible;
+    }
+    if (currencyInput) currencyInput.disabled = passEligible;
+    if (moneyRow) moneyRow.classList.toggle("is-disabled", passEligible);
     if (!wrap || !input) return;
     const isTwd = code === "TWD";
-    wrap.hidden = isTwd;
-    input.required = !isTwd && parseNumber(form.elements.cost?.value) > 0;
-    if (isTwd) input.value = "1";
+    wrap.hidden = isTwd || passEligible;
+    input.required = !passEligible && !isTwd && parseNumber(costInput?.value) > 0;
+    if (isTwd || passEligible) input.value = "1";
     if (label) label.textContent = `匯率（1 ${code} = ? TWD）`;
   };
   form.elements.method.addEventListener("change", updateMethodSection);
   form.elements.transferCount.addEventListener("change", updateTransferLegs);
   form.elements.currency?.addEventListener("change", updateTransportExchangeRate);
   form.elements.cost?.addEventListener("input", updateTransportExchangeRate);
+  form.elements.transportPassEligible?.addEventListener("change", updateTransportExchangeRate);
   form.addEventListener("change", updateDurationPreviews);
   form.addEventListener("input", updateDurationPreviews);
   updateMethodSection();
@@ -2612,21 +2640,23 @@ function openTransportForm(id, defaultDate) {
     const method = transportMethodLabel(value("method"));
     const kind = transportFormKind(method);
     const isWalking = method === "步行";
+    const transportPassEligible = !isWalking && Boolean(form.elements.transportPassEligible?.checked);
     const data = {
       date: value("date") || defaultDate || activeTrip().startDate || todayISO(),
       method,
       mapUrl: value("mapUrl"),
       backup: value("backup"),
       notes: value("notes"),
-      cost: isWalking ? 0 : parseNumber(value("cost")),
-      currency: (value("currency") || "TWD").toUpperCase(),
-      costExchangeRate: (value("currency") || "TWD").toUpperCase() === "TWD" ? 1 : parseNumber(value("costExchangeRate")),
+      cost: (isWalking || transportPassEligible) ? 0 : parseNumber(value("cost")),
+      currency: transportPassEligible ? "TWD" : (value("currency") || "TWD").toUpperCase(),
+      costExchangeRate: (isWalking || transportPassEligible || (value("currency") || "TWD").toUpperCase() === "TWD") ? 1 : parseNumber(value("costExchangeRate")),
+      transportPassEligible,
       luggageFriendly: "",
       bookingStatus: "",
       ticketInfo: ""
     };
 
-    if (!isWalking && data.cost > 0 && data.currency !== "TWD" && data.costExchangeRate <= 0) {
+    if (!isWalking && !transportPassEligible && data.cost > 0 && data.currency !== "TWD" && data.costExchangeRate <= 0) {
       toast("請填寫交通花費的外幣匯率");
       form.elements.costExchangeRate?.focus();
       return;
@@ -3094,7 +3124,7 @@ function renderField(field, item) {
       <div class="field full money-field" data-money-field>
         <label>${escapeHtml(field.label)}</label>
         <div class="money-input-row">
-          <select name="${field.currencyName}" data-money-currency aria-label="${escapeHtml(field.label)}幣值">${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === currencyValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>
+          <select name="${field.currencyName}" data-money-currency aria-label="${escapeHtml(field.label)}幣值">${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === currencyValue ? "selected" : ""}>${escapeHtml(currencyOptionLabel(option))}</option>`).join("")}</select>
           <input type="number" name="${field.amountName}" value="${escapeHtml(amountValue)}" min="0" step="any" inputmode="decimal" placeholder="金額" aria-label="${escapeHtml(field.label)}金額" ${required} />
         </div>
         <div class="exchange-rate-row" data-exchange-rate-wrap ${currencyValue === "TWD" ? "hidden" : ""}>
@@ -3131,7 +3161,8 @@ function renderField(field, item) {
       </div>`;
   }
   if (field.type === "select") {
-    return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><select name="${field.name}" ${required}>${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></div>`;
+    const isCurrencyOptions = field.options === fieldOptions.currency;
+    return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><select name="${field.name}" ${required}>${field.options.map((option) => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(isCurrencyOptions ? currencyOptionLabel(option) : option)}</option>`).join("")}</select></div>`;
   }
   if (field.type === "checkbox") {
     return `<div class="field ${full}"><label>${escapeHtml(field.label)}</label><label class="checkbox-row"><input type="checkbox" name="${field.name}" ${value ? "checked" : ""} /> 是</label></div>`;
