@@ -1,1 +1,2 @@
-TripBoard 2.18.2：行程交通快速編輯、電車、貨幣中文名稱、交通票零費用。
+TripBoard 2.18.3
+上傳並覆蓋 index.html、app.js、style.css、service-worker.js。

@@ -466,9 +466,19 @@ const CURRENCY_NAMES = {
   TRY: "土耳其里拉", AED: "阿聯迪拉姆", SAR: "沙烏地里亞爾", QAR: "卡達里亞爾", INR: "印度盧比"
 };
 
+const CURRENCY_FLAGS = {
+  TWD: "🇹🇼", JPY: "🇯🇵", KRW: "🇰🇷", CNY: "🇨🇳", HKD: "🇭🇰", MOP: "🇲🇴",
+  SGD: "🇸🇬", MYR: "🇲🇾", THB: "🇹🇭", VND: "🇻🇳", PHP: "🇵🇭", IDR: "🇮🇩",
+  USD: "🇺🇸", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", EUR: "🇪🇺", GBP: "🇬🇧", CHF: "🇨🇭",
+  SEK: "🇸🇪", NOK: "🇳🇴", DKK: "🇩🇰", CZK: "🇨🇿", PLN: "🇵🇱", HUF: "🇭🇺",
+  TRY: "🇹🇷", AED: "🇦🇪", SAR: "🇸🇦", QAR: "🇶🇦", INR: "🇮🇳"
+};
+
 function currencyOptionLabel(code = "") {
   const normalized = String(code || "").toUpperCase();
-  return CURRENCY_NAMES[normalized] ? `${normalized}｜${CURRENCY_NAMES[normalized]}` : normalized;
+  const name = CURRENCY_NAMES[normalized];
+  const flag = CURRENCY_FLAGS[normalized] || "";
+  return name ? `${flag ? `${flag} ` : ""}${normalized}｜${name}` : normalized;
 }
 
 function currency(amount, currencyCode = "TWD") {
@@ -2555,9 +2565,13 @@ function openTransportForm(id, defaultDate) {
               <input type="number" name="cost" value="${escapeHtml(item.cost || "")}" inputmode="decimal" min="0" step="any" placeholder="金額" aria-label="花費金額" />
             </div>
             <div class="exchange-rate-row transport-exchange-rate" data-transport-exchange-rate ${String(item.currency || "TWD").toUpperCase() === "TWD" ? "hidden" : ""}>
-              <label data-transport-rate-label>匯率（1 ${escapeHtml(String(item.currency || "TWD").toUpperCase())} = ? TWD）</label>
-              <input type="number" name="costExchangeRate" value="${escapeHtml(item.costExchangeRate || "")}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" />
-              <small>預算會依此匯率換算成新台幣。</small>
+              <label>匯率</label>
+              <div class="exchange-rate-equation">
+                <span>1 <b data-transport-rate-code>${escapeHtml(String(item.currency || "TWD").toUpperCase())}</b> =</span>
+                <input type="number" name="costExchangeRate" value="${escapeHtml(item.costExchangeRate || "")}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" />
+                <span>TWD</span>
+              </div>
+              <small>依此匯率自動換算新台幣並納入預算。</small>
             </div>
           </section>
 
@@ -2606,7 +2620,7 @@ function openTransportForm(id, defaultDate) {
     const code = String(form.elements.currency?.value || "TWD").toUpperCase();
     const wrap = form.querySelector("[data-transport-exchange-rate]");
     const input = form.elements.costExchangeRate;
-    const label = form.querySelector("[data-transport-rate-label]");
+    const rateCode = form.querySelector("[data-transport-rate-code]");
     const passEligible = Boolean(form.elements.transportPassEligible?.checked);
     const moneyRow = form.querySelector("[data-transport-money-row]");
     const costInput = form.elements.cost;
@@ -2622,7 +2636,7 @@ function openTransportForm(id, defaultDate) {
     wrap.hidden = isTwd || passEligible;
     input.required = !passEligible && !isTwd && parseNumber(costInput?.value) > 0;
     if (isTwd || passEligible) input.value = "1";
-    if (label) label.textContent = `匯率（1 ${code} = ? TWD）`;
+    if (rateCode) rateCode.textContent = code;
   };
   form.elements.method.addEventListener("change", updateMethodSection);
   form.elements.transferCount.addEventListener("change", updateTransferLegs);
@@ -2986,14 +3000,14 @@ function openForm({ title, fields, item, onSubmit }) {
       const currencyInput = group.querySelector("[data-money-currency]");
       const rateWrap = group.querySelector("[data-exchange-rate-wrap]");
       const rateInput = group.querySelector("[data-exchange-rate-input]");
-      const rateLabel = group.querySelector("[data-exchange-rate-label]");
+      const rateCode = group.querySelector("[data-exchange-rate-code]");
       if (!currencyInput || !rateWrap || !rateInput) return;
       const code = String(currencyInput.value || "TWD").toUpperCase();
       const isTwd = code === "TWD";
       rateWrap.hidden = isTwd;
       rateInput.required = !isTwd;
       if (isTwd) rateInput.value = "1";
-      if (rateLabel) rateLabel.textContent = `匯率（1 ${code} = ? TWD）`;
+      if (rateCode) rateCode.textContent = code;
     });
   };
   form.querySelectorAll("[data-money-currency]").forEach((input) => input.addEventListener("change", updateMoneyExchangeRateFields));
@@ -3128,9 +3142,13 @@ function renderField(field, item) {
           <input type="number" name="${field.amountName}" value="${escapeHtml(amountValue)}" min="0" step="any" inputmode="decimal" placeholder="金額" aria-label="${escapeHtml(field.label)}金額" ${required} />
         </div>
         <div class="exchange-rate-row" data-exchange-rate-wrap ${currencyValue === "TWD" ? "hidden" : ""}>
-          <label data-exchange-rate-label>匯率（1 ${escapeHtml(currencyValue)} = ? TWD）</label>
-          <input type="number" name="${field.rateName}" data-exchange-rate-input value="${escapeHtml(rateValue)}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" aria-label="${escapeHtml(field.label)}換算匯率" />
-          <small>預算會依此匯率換算成新台幣。</small>
+          <label>匯率</label>
+          <div class="exchange-rate-equation">
+            <span>1 <b data-exchange-rate-code>${escapeHtml(currencyValue)}</b> =</span>
+            <input type="number" name="${field.rateName}" data-exchange-rate-input value="${escapeHtml(rateValue)}" min="0" step="any" inputmode="decimal" placeholder="例如 0.22" aria-label="${escapeHtml(field.label)}換算匯率" />
+            <span>TWD</span>
+          </div>
+          <small>依此匯率自動換算新台幣並納入預算。</small>
         </div>
       </div>`;
   }
